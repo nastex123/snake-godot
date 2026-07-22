@@ -1,0 +1,157 @@
+[gd_scene format=3 uid="uid://drospby5k6u6f"]
+
+[ext_resource type="Script" uid="uid://bbc8lrtyfvkit" path="res://Game.gd" id="1_gd"]
+[ext_resource type="Script" uid="uid://bbh55wk6w4ch3" path="res://GridTexture.gd" id="3_gd"]
+[ext_resource type="Script" uid="uid://dxtqfeh1cy2rs" path="res://ComboTimer.gd" id="4_gd"]
+[ext_resource type="Script" uid="uid://di41lu3u7exma" path="res://BorderScanner.gd" id="5_gd"]
+[ext_resource type="Script" path="res://GridBorder.gd" id="6_gd"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s6t5r"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7s4h3"]
+
+[node name="Game" type="Node2D" unique_id=1325700460]
+script = ExtResource("1_gd")
+
+[node name="TopBar" type="ColorRect" parent="." unique_id=1511685653]
+offset_right = 720.0
+offset_bottom = 56.0
+color = Color(0.05, 0.05, 0.07, 1)
+
+[node name="TopBarSeparator" type="ColorRect" parent="." unique_id=1482044407]
+offset_top = 56.0
+offset_right = 720.0
+offset_bottom = 58.0
+color = Color(0.25, 0.6, 0.9, 0.5)
+
+[node name="GameArea" type="Node2D" parent="." unique_id=213611702]
+position = Vector2(0, 56)
+
+[node name="GridBackground" type="TextureRect" parent="GameArea" unique_id=915067709]
+z_index = -1
+offset_right = 720.0
+offset_bottom = 432.0
+mouse_filter = 2
+script = ExtResource("3_gd")
+
+[node name="Food" type="Area2D" parent="GameArea" unique_id=2090121806]
+z_index = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GameArea/Food" unique_id=1528295680]
+shape = SubResource("RectangleShape2D_s6t5r")
+
+[node name="SnakeHead" type="Area2D" parent="GameArea" unique_id=1066937757]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GameArea/SnakeHead" unique_id=1344509503]
+shape = SubResource("RectangleShape2D_7s4h3")
+
+[node name="SnakeBody" type="Node2D" parent="GameArea" unique_id=62260600]
+
+[node name="BorderScanner" type="Node2D" parent="GameArea" unique_id=2085190682]
+z_index = 3
+script = ExtResource("5_gd")
+
+[node name="GridBorder" type="Node2D" parent="GameArea"]
+z_index = 1
+script = ExtResource("6_gd")
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=411917940]
+
+[node name="ScoreLabel" type="Label" parent="HUD" unique_id=245781817]
+offset_right = 104.0
+offset_bottom = 23.0
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "SCORE"
+
+[node name="ScoreValue" type="Label" parent="HUD" unique_id=81320943]
+offset_top = 16.0
+offset_right = 128.0
+offset_bottom = 52.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 26
+text = "0"
+
+[node name="BestLabel" type="Label" parent="HUD" unique_id=324783098]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_right = -16.0
+offset_bottom = 23.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
+theme_override_font_sizes/font_size = 16
+text = "BEST"
+horizontal_alignment = 2
+
+[node name="BestValue" type="Label" parent="HUD" unique_id=689586979]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -144.0
+offset_top = 16.0
+offset_bottom = 52.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 26
+text = "0"
+horizontal_alignment = 2
+
+[node name="StreakLabel" type="Label" parent="HUD" unique_id=1007581019]
+offset_left = 240.0
+offset_top = 2.0
+offset_right = 480.0
+offset_bottom = 25.0
+theme_override_colors/font_color = Color(1, 0.4, 0.1, 1)
+theme_override_font_sizes/font_size = 16
+text = "STREAK x0"
+horizontal_alignment = 1
+
+[node name="ComboTimer" type="Control" parent="HUD" unique_id=1584734362]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 240.0
+offset_top = 31.0
+offset_right = 480.0
+offset_bottom = 39.0
+mouse_filter = 2
+script = ExtResource("4_gd")
+
+[node name="GameOverLabel" type="Label" parent="HUD" unique_id=635960080]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -22.0
+offset_right = 150.0
+offset_bottom = 78.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+theme_override_font_sizes/font_size = 48
+text = "GAME OVER"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RestartLabel" type="Label" parent="HUD" unique_id=1781159640]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = 48.0
+offset_right = 120.0
+offset_bottom = 72.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Press SPACE to restart"
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -1,0 +1,8 @@
+# Godot
+.godot/
+*.import
+*.translation
+import/
+.mono/
+data_*/
+export/
