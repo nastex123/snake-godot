@@ -4,10 +4,9 @@
 [ext_resource type="Script" uid="uid://bbh55wk6w4ch3" path="res://GridTexture.gd" id="3_gd"]
 [ext_resource type="Script" uid="uid://dxtqfeh1cy2rs" path="res://ComboTimer.gd" id="4_gd"]
 [ext_resource type="Script" uid="uid://di41lu3u7exma" path="res://BorderScanner.gd" id="5_gd"]
-[ext_resource type="Script" path="res://GridBorder.gd" id="6_gd"]
-[ext_resource type="Script" path="res://ScreenShake.gd" id="7_gd"]
-[ext_resource type="Script" path="res://AudioManager.gd" id="8_gd"]
-[ext_resource type="Script" path="res://FloatingText.gd" id="9_gd"]
+[ext_resource type="Script" uid="uid://x0pabnngox6o" path="res://GridBorder.gd" id="6_gd"]
+[ext_resource type="Script" uid="uid://cf8ovtg7mv8ng" path="res://ScreenShake.gd" id="7_gd"]
+[ext_resource type="Script" uid="uid://b8jvxho013s4m" path="res://AudioManager.gd" id="8_gd"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s6t5r"]
 
@@ -54,16 +53,15 @@ shape = SubResource("RectangleShape2D_7s4h3")
 z_index = 3
 script = ExtResource("5_gd")
 
-[node name="GridBorder" type="Node2D" parent="GameArea"]
+[node name="GridBorder" type="Node2D" parent="GameArea" unique_id=1646822714]
 z_index = 1
 script = ExtResource("6_gd")
 
-[node name="Camera2D" type="Camera2D" parent="GameArea"]
-position = Vector2(360, 216)
-script = ExtResource("7_gd")
-
-[node name="AudioManager" type="Node" parent="."]
+[node name="AudioManager" type="Node" parent="." unique_id=482437364]
 script = ExtResource("8_gd")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+script = ExtResource("7_gd")
 
 [node name="HUD" type="CanvasLayer" parent="." unique_id=411917940]
 

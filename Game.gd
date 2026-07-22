@@ -17,7 +17,7 @@ const BASE_MOVE_INTERVAL := 0.15
 @onready var game_over_label: Label = $HUD/GameOverLabel
 @onready var restart_label: Label = $HUD/RestartLabel
 @onready var border_scanner: Node2D = $GameArea/BorderScanner
-@onready var screen_shake: Camera2D = $GameArea/Camera2D
+@onready var screen_shake: Camera2D = $Camera2D
 @onready var audio_manager: Node = $AudioManager
 @onready var game_area: Node2D = $GameArea
 

@@ -3,6 +3,9 @@ extends Camera2D
 var intensity := 0.0
 var decay := 0.0
 
+func _ready() -> void:
+	anchor_mode = Camera2D.ANCHOR_MODE_FIXED_TOP_LEFT
+
 func shake(amount: float) -> void:
 	intensity = amount
 	decay = max(amount * 80.0, 120.0)
