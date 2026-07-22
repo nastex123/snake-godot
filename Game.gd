@@ -17,6 +17,11 @@ const BASE_MOVE_INTERVAL := 0.15
 @onready var game_over_label: Label = $HUD/GameOverLabel
 @onready var restart_label: Label = $HUD/RestartLabel
 @onready var border_scanner: Node2D = $GameArea/BorderScanner
+@onready var screen_shake: Camera2D = $GameArea/Camera2D
+@onready var audio_manager: Node = $AudioManager
+@onready var game_area: Node2D = $GameArea
+
+var floating_text_scene = preload("res://FloatingText.gd")
 
 var snake: Array = []
 var body_parts: Array = []
@@ -107,11 +112,16 @@ func move_snake() -> void:
 	if ate:
 		streak = min(streak + 1, 5)
 		combo_time = COMBO_MAX_TIME
-		score += 1
+		score += streak
 		score_value_label.text = str(score)
 		move_interval = max(0.06, BASE_MOVE_INTERVAL - streak * STREAK_SPEED_BOOST)
 		update_streak_visuals()
 		border_scanner.trigger_dash()
+		audio_manager.play_eat(streak)
+		screen_shake.shake((streak - 1) * 0.8 + 0.5)
+		var ft := floating_text_scene.new()
+		ft.play(food_pos, get_streak_color(streak), streak)
+		game_area.add_child(ft)
 		spawn_food()
 	else:
 		snake.pop_back()
