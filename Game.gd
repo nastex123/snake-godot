@@ -1,4 +1,4 @@
-extends Node2D
+﻿extends Node2D
 
 const TILE_SIZE := 24
 const GRID_WIDTH := 30
@@ -20,6 +20,7 @@ const BASE_MOVE_INTERVAL := 0.15
 @onready var screen_shake: Camera2D = $Camera2D
 @onready var audio_manager: Node = $AudioManager
 @onready var game_area: Node2D = $GameArea
+@onready var bg_shader: ColorRect = $GameArea/GridBackgroundShader
 
 var floating_text_scene = preload("res://FloatingText.gd")
 
@@ -35,6 +36,8 @@ var move_interval := BASE_MOVE_INTERVAL
 var food_pos := Vector2i.ZERO
 var streak := 0
 var combo_time := 0.0
+var wave_time := 0.0
+const WAVE_DURATION := 0.6
 
 var head_visual
 var food_visual: ColorRect
@@ -52,6 +55,7 @@ func _ready() -> void:
 	food.add_child(food_visual)
 
 	reset_game()
+	bg_shader.material.set("shader_parameter/streak_level", 0)
 
 func _process(delta: float) -> void:
 	if game_over:
@@ -66,6 +70,11 @@ func _process(delta: float) -> void:
 		move_snake()
 
 	update_combo(delta)
+
+	if wave_time > 0:
+		wave_time = max(0.0, wave_time - delta)
+		if wave_time > 0:
+			bg_shader.material.set("shader_parameter/wave_time", wave_time)
 
 func update_combo(delta: float) -> void:
 	if combo_time > 0:
@@ -122,6 +131,12 @@ func move_snake() -> void:
 		var ft := floating_text_scene.new()
 		ft.play(food_pos, get_streak_color(streak), streak)
 		game_area.add_child(ft)
+		wave_time = WAVE_DURATION
+		bg_shader.material.set("shader_parameter/wave_time", WAVE_DURATION)
+		bg_shader.material.set("shader_parameter/wave_center", Vector2(
+			float(food_pos.x) / GRID_WIDTH,
+			float(food_pos.y) / GRID_HEIGHT
+		))
 		spawn_food()
 	else:
 		snake.pop_back()
@@ -136,12 +151,14 @@ func update_streak_visuals() -> void:
 		border_scanner.set_streak(streak)
 		border_scanner.set_active(true)
 		combo_timer.set_color(c)
+		bg_shader.material.set("shader_parameter/streak_level", streak)
 	else:
 		streak_label.text = ""
 		food_visual.color = Color(1, 0, 0, 1)
 		border_scanner.set_streak(0)
 		border_scanner.set_active(false)
 		combo_timer.set_color(Color(1.0, 0.53, 0.0, 1.0))
+		bg_shader.material.set("shader_parameter/streak_level", 0)
 		move_interval = BASE_MOVE_INTERVAL
 
 static func get_streak_color(s: int) -> Color:
@@ -209,6 +226,8 @@ func reset_game() -> void:
 	game_over = false
 	streak = 0
 	combo_time = 0.0
+	wave_time = 0.0
+	bg_shader.material.set("shader_parameter/wave_time", 0.0)
 	game_over_label.visible = false
 	restart_label.visible = false
 	score_value_label.text = "0"

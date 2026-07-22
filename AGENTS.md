@@ -13,6 +13,7 @@
 | `GridBorder.gd` | 2px black outline around the grid |
 | `SnakeHead.gd` | Head with rotating eyes (pivot at tile center +12,+12) |
 | `BorderScanner.gd` | Dual-opposing animated scanners on perimeter, streak-colored |
+| `grid_background.gdshader` | Dynamic background shader: breathing, energy flow, wave pulse on eat, streak reaction |
 
 ## Key mechanics
 
@@ -20,9 +21,10 @@
 - Streak cap: **5**. Colors cycle: orange→gold→green→cyan→purple
 - Speed: resets to `BASE_MOVE_INTERVAL` (0.15s) on streak end; `max(0.06, BASE - streak * 0.008)` per eat
 - Combo timer: 3s window, resets on eat
-- `update_streak_visuals()` called whenever streak changes — handles label, food color, scanner color, combo timer bar color, and speed reset
+- `update_streak_visuals()` called whenever streak changes — handles label, food color, scanner color, combo timer bar color, shader streak level, and speed reset
 - `get_streak_color(s) -> Color`: single source of truth for all streak colors
 - `move_interval` recalcula desde BASE en cada eat, no se acumula
+- Shader: `GridBackgroundShader` ColorRect (z_index=-2) below `GridBackground`, wave pulse emitted on eat at food position, breathing rate and intensity scale with streak
 
 ## How to test
 
