@@ -23,6 +23,7 @@ const BASE_MOVE_INTERVAL := 0.15
 @onready var bg_shader: ColorRect = $GameArea/GridBackgroundShader
 
 var floating_text_scene = preload("res://FloatingText.gd")
+const EXPLOSION_EFFECT = preload("res://ExplosionEffect.gd")
 
 var snake: Array = []
 var body_parts: Array = []
@@ -137,6 +138,9 @@ func move_snake() -> void:
 		var ft := floating_text_scene.new()
 		ft.play(food_pos, get_streak_color(streak), streak)
 		game_area.add_child(ft)
+		var exp := EXPLOSION_EFFECT.new()
+		game_area.add_child(exp)
+		exp.play(food_pos, get_streak_color(streak), streak)
 		wave_time = WAVE_DURATION
 		bg_shader.material.set("shader_parameter/wave_time", WAVE_DURATION)
 		bg_shader.material.set("shader_parameter/wave_center", Vector2(
@@ -151,6 +155,8 @@ func move_snake() -> void:
 		snake.pop_back()
 
 	update_body()
+	if ate:
+		trigger_growth_flash()
 
 func update_streak_visuals() -> void:
 	if streak > 0:
@@ -194,6 +200,15 @@ func update_body() -> void:
 
 	snake_head.position = Vector2(snake[0]) * TILE_SIZE
 
+func trigger_growth_flash() -> void:
+	for i in body_parts.size():
+		var part: ColorRect = body_parts[i]
+		var delay := i * 0.01
+		var tween := create_tween()
+		tween.tween_interval(delay)
+		tween.tween_property(part, "color", Color.WHITE, 0.01)
+		tween.tween_property(part, "color", Color(0, 0.7, 0, 1), 10.0).set_ease(Tween.EASE_OUT)
+
 func spawn_food() -> void:
 	var free_cells: Array = []
 	for x in GRID_WIDTH:
@@ -221,6 +236,12 @@ func end_game() -> void:
 	streak = 0
 	update_streak_visuals()
 
+	var tw := create_tween()
+	tw.tween_method(_set_game_over_fade, 0.0, 0.8, 0.5).set_ease(Tween.EASE_IN)
+
+func _set_game_over_fade(v: float) -> void:
+	bg_shader.material.set("shader_parameter/game_over_fade", v)
+
 func reset_game() -> void:
 	snake.clear()
 	snake.append(Vector2i(15, 9))
@@ -241,6 +262,7 @@ func reset_game() -> void:
 	bg_shader.material.set("shader_parameter/wave_flash", 0.0)
 	game_over_label.visible = false
 	restart_label.visible = false
+	bg_shader.material.set("shader_parameter/game_over_fade", 0.0)
 	score_value_label.text = "0"
 	update_streak_visuals()
 

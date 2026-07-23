@@ -5,13 +5,15 @@ uniform vec2 wave_center = vec2(0.5);
 uniform float wave_time = 0.0;
 uniform float wave_flash = 0.0;
 uniform float wave_duration = 0.6;
+uniform float game_over_fade = 0.0;
 
 void fragment() {
 	vec2 uv = UV;
 
 	vec2 cell_uv = uv * vec2(30.0, 18.0);
-	vec2 cell_id = floor(cell_uv);
 	vec2 cell = fract(cell_uv) - 0.5;
+
+	vec2 tile_uv = uv * vec2(30.0, 18.0);
 
 	float radius = 0.22;
 	float wave_glow = 0.0;
@@ -20,7 +22,6 @@ void fragment() {
 	if (wave_time > 0.0) {
 		float t = wave_time / wave_duration;
 		if (t < 1.0) {
-			vec2 tile_uv = uv * vec2(30.0, 18.0);
 			vec2 tile_center = wave_center * vec2(30.0, 18.0);
 			float tile_dist = max(abs(tile_uv.x - tile_center.x), abs(tile_uv.y - tile_center.y));
 			float speed = 0.3 + float(streak_level) * 0.1;
@@ -45,12 +46,32 @@ void fragment() {
 		}
 	}
 
+	{
+		vec2 center_tile = vec2(15.0, 9.0);
+		float breath_dist = max(abs(tile_uv.x - center_tile.x), abs(tile_uv.y - center_tile.y));
+		float breath_cycle = 2.5;
+		float breath_t = mod(TIME, breath_cycle) / breath_cycle;
+		float breath_radius = breath_t * 18.0;
+		float breath_thick = 0.6;
+		float breath_ring = step(breath_radius - breath_thick, breath_dist) - step(breath_radius + breath_thick, breath_dist);
+		float breath_intensity = sin(breath_t * 3.14159) * breath_ring;
+		wave_glow = max(wave_glow, breath_intensity * 0.06);
+		deform += breath_intensity * 0.04;
+	}
+
 	radius += deform;
 
 	float dot = 1.0 - smoothstep(radius - 0.02, radius, max(abs(cell.x), abs(cell.y)));
 
 	vec3 bg = vec3(0.05);
-	vec3 color = vec3(0.25);
+	vec3 base_color = vec3(0.25);
+
+	if (game_over_fade > 0.0) {
+		vec3 red = vec3(0.8, 0.0, 0.0);
+		base_color = mix(base_color, red, game_over_fade);
+	}
+
+	vec3 color = base_color;
 
 	float brightness = (0.12 + float(streak_level) * 0.1) * wave_glow;
 	color += vec3(brightness);
