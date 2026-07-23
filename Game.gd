@@ -1,4 +1,4 @@
-﻿extends Node2D
+extends Node2D
 
 const TILE_SIZE := 24
 const GRID_WIDTH := 30
@@ -37,6 +37,7 @@ var food_pos := Vector2i.ZERO
 var streak := 0
 var combo_time := 0.0
 var wave_time := 0.0
+var wave_flash := 0.0
 const WAVE_DURATION := 0.6
 
 var head_visual
@@ -56,6 +57,7 @@ func _ready() -> void:
 
 	reset_game()
 	bg_shader.material.set("shader_parameter/streak_level", 0)
+	bg_shader.material.set("shader_parameter/wave_flash", 0.0)
 
 func _process(delta: float) -> void:
 	if game_over:
@@ -75,6 +77,10 @@ func _process(delta: float) -> void:
 		wave_time = max(0.0, wave_time - delta)
 		if wave_time > 0:
 			bg_shader.material.set("shader_parameter/wave_time", wave_time)
+
+	if wave_flash > 0:
+		wave_flash = max(0.0, wave_flash - delta)
+		bg_shader.material.set("shader_parameter/wave_flash", wave_flash)
 
 func update_combo(delta: float) -> void:
 	if combo_time > 0:
@@ -137,6 +143,9 @@ func move_snake() -> void:
 			float(food_pos.x) / GRID_WIDTH,
 			float(food_pos.y) / GRID_HEIGHT
 		))
+		if streak == 5:
+			wave_flash = 0.15
+			bg_shader.material.set("shader_parameter/wave_flash", wave_flash)
 		spawn_food()
 	else:
 		snake.pop_back()
@@ -227,7 +236,9 @@ func reset_game() -> void:
 	streak = 0
 	combo_time = 0.0
 	wave_time = 0.0
+	wave_flash = 0.0
 	bg_shader.material.set("shader_parameter/wave_time", 0.0)
+	bg_shader.material.set("shader_parameter/wave_flash", 0.0)
 	game_over_label.visible = false
 	restart_label.visible = false
 	score_value_label.text = "0"
