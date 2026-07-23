@@ -1,6 +1,6 @@
 # Snake
 
-Retro arcade Snake hecho en Godot 4.7.1 con efectos visuales dinámicos.
+Retro arcade Snake hecho en Godot 4.7.1 con estilo cómic retro y font Press Start 2P.
 
 ## Gameplay
 
@@ -14,9 +14,23 @@ Retro arcade Snake hecho en Godot 4.7.1 con efectos visuales dinámicos.
 
 | x1 | x2 | x3 | x4 | x5 |
 |----|----|----|----|----|
-| 🟠 | 🟡 | 🟢 | 🔵 | 🟣 |
+| 🟢 | 🔵 | 🟡 | 🟠 | 🟣 |
 
 ## Visuales
+
+### HUD retro (`LetterWaveText.gd`)
+
+- Font **Press Start 2P** en toda la interfaz con contorno negro via `LabelSettings`
+- `LetterWaveText`: Control que divide el texto en Labels individuales con animación sine-wave (offset Y sinusoidal)
+- Efecto `pulse()` — onda extra al comer, decae en ~1s
+- HUD dividido en 3 secciones: Left (SCORE + valor), Center (STREAK + multiplicador + barra combo), Right (BEST + valor)
+- Barra de combo (`ComboTimer.gd`) con `bounce()` — animación elástica al comer
+
+### Colores HUD
+
+- Textos estáticos en cyan claro (`#4DCCFF`)
+- Valores en blanco
+- Game Over en rojo (`#FF3333`)
 
 ### Shader de fondo (`grid_background.gdshader`)
 
@@ -57,7 +71,7 @@ Texto "STREAK xN" flotante animado que aparece en la posición de la comida al c
 
 ### Game Over
 
-- Label "GAME OVER" rojo + "Press SPACE to restart"
+- Frame negro semitransparente centrado con "GAME OVER" rojo (LetterWaveText animado) + "PRESS SPACE"
 - Los cuadraditos del fondo se tiñen de rojo (fade vía shader)
 
 ## Controles
