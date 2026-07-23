@@ -11,6 +11,14 @@ var ratio := 0.0
 var fill_ratio := 0.0
 var fill_color := COLOR_FILL
 
+func _ready() -> void:
+	pivot_offset = size / 2.0
+
+func bounce() -> void:
+	var t := create_tween().set_ease(Tween.EASE_OUT)
+	t.tween_property(self, "scale", Vector2(1.04, 1.0), 0.05)
+	t.tween_property(self, "scale", Vector2(1.0, 1.0), 0.15).set_trans(Tween.TRANS_ELASTIC)
+
 func set_ratio(v: float) -> void:
 	ratio = clampf(v, 0.0, 1.0)
 

@@ -10,11 +10,13 @@ const BASE_MOVE_INTERVAL := 0.15
 @onready var food: Area2D = $GameArea/Food
 @onready var snake_head: Area2D = $GameArea/SnakeHead
 @onready var snake_body: Node2D = $GameArea/SnakeBody
-@onready var score_value_label: Label = $HUD/ScoreValue
-@onready var best_value_label: Label = $HUD/BestValue
-@onready var streak_label: Label = $HUD/StreakLabel
-@onready var combo_timer: Control = $HUD/ComboTimer
-@onready var game_over_label: Label = $HUD/GameOverLabel
+@onready var score_value_label: Label = $HUD/LeftSection/ScoreValue
+@onready var high_score_value_label: Label = $HUD/RightSection/HighScoreValue
+@onready var streak_label = $HUD/CenterSection/StreakLabel
+@onready var streak_multiplier: Label = $HUD/CenterSection/StreakMultiplier
+@onready var combo_timer: Control = $HUD/CenterSection/ComboTimer
+@onready var game_over_label = $HUD/GameOverFrame/GameOverLabel
+@onready var game_over_frame: ColorRect = $HUD/GameOverFrame
 @onready var restart_label: Label = $HUD/RestartLabel
 @onready var border_scanner: Node2D = $GameArea/BorderScanner
 @onready var screen_shake: Camera2D = $Camera2D
@@ -57,6 +59,9 @@ func _ready() -> void:
 	food.add_child(food_visual)
 
 	reset_game()
+
+	_setup_retro_font()
+
 	bg_shader.material.set("shader_parameter/streak_level", 0)
 	bg_shader.material.set("shader_parameter/wave_flash", 0.0)
 
@@ -129,9 +134,15 @@ func move_snake() -> void:
 		streak = min(streak + 1, 5)
 		combo_time = COMBO_MAX_TIME
 		score += streak
-		score_value_label.text = str(score)
+		score_value_label.text = "%06d" % score
 		move_interval = max(0.06, BASE_MOVE_INTERVAL - streak * STREAK_SPEED_BOOST)
 		update_streak_visuals()
+		streak_label.pulse()
+		streak_multiplier.scale = Vector2(1.0, 1.0)
+		var mt := create_tween().set_ease(Tween.EASE_OUT)
+		mt.tween_property(streak_multiplier, "scale", Vector2(1.3, 1.3), 0.05)
+		mt.tween_property(streak_multiplier, "scale", Vector2(1.0, 1.0), 0.1).set_trans(Tween.TRANS_ELASTIC)
+		combo_timer.bounce()
 		border_scanner.trigger_dash()
 		audio_manager.play_eat(streak)
 		screen_shake.shake((streak - 1) * 0.8 + 0.5)
@@ -160,8 +171,13 @@ func move_snake() -> void:
 
 func update_streak_visuals() -> void:
 	if streak > 0:
-		streak_label.text = "STREAK x" + str(streak)
+		streak_label.text = "STREAK"
+		streak_label.visible = true
+		streak_multiplier.text = "x" + str(streak)
+		streak_multiplier.visible = true
 		var c := get_streak_color(streak)
+		streak_label.set_text_color(c)
+		streak_multiplier.add_theme_color_override("font_color", c)
 		food_visual.color = c
 		border_scanner.set_streak(streak)
 		border_scanner.set_active(true)
@@ -169,6 +185,8 @@ func update_streak_visuals() -> void:
 		bg_shader.material.set("shader_parameter/streak_level", streak)
 	else:
 		streak_label.text = ""
+		streak_label.visible = false
+		streak_multiplier.visible = false
 		food_visual.color = Color(1, 0, 0, 1)
 		border_scanner.set_streak(0)
 		border_scanner.set_active(false)
@@ -178,11 +196,11 @@ func update_streak_visuals() -> void:
 
 static func get_streak_color(s: int) -> Color:
 	match s:
-		1: return Color(1.0, 0.53, 0.0)
-		2: return Color(1.0, 0.84, 0.0)
-		3: return Color(0.2, 0.9, 0.48)
-		4: return Color(0.2, 0.67, 1.0)
-		5: return Color(0.8, 0.27, 1.0)
+		1: return Color("#33CC33")
+		2: return Color("#3399FF")
+		3: return Color("#FFCC00")
+		4: return Color("#FF6600")
+		5: return Color("#CC33FF")
 		_: return Color(1, 0, 0, 1)
 
 func update_body() -> void:
@@ -225,12 +243,14 @@ func spawn_food() -> void:
 
 func end_game() -> void:
 	game_over = true
+	game_over_frame.visible = true
 	game_over_label.visible = true
+	game_over_label.pulse()
 	restart_label.visible = true
 
 	if score > best_score:
 		best_score = score
-		best_value_label.text = str(best_score)
+		high_score_value_label.text = "%06d" % best_score
 
 	combo_time = 0.0
 	streak = 0
@@ -241,6 +261,18 @@ func end_game() -> void:
 
 func _set_game_over_fade(v: float) -> void:
 	bg_shader.material.set("shader_parameter/game_over_fade", v)
+
+func _setup_retro_font() -> void:
+	var base = load("res://fonts/PressStart2P-Regular.ttf")
+	if not base:
+		return
+	var ls := LabelSettings.new()
+	ls.font = base
+	ls.outline_size = 1
+	ls.outline_color = Color.BLACK
+	var labels := [score_value_label, high_score_value_label, streak_multiplier, restart_label]
+	for lbl in labels:
+		lbl.label_settings = ls
 
 func reset_game() -> void:
 	snake.clear()
@@ -260,10 +292,12 @@ func reset_game() -> void:
 	wave_flash = 0.0
 	bg_shader.material.set("shader_parameter/wave_time", 0.0)
 	bg_shader.material.set("shader_parameter/wave_flash", 0.0)
+	game_over_frame.visible = false
 	game_over_label.visible = false
 	restart_label.visible = false
 	bg_shader.material.set("shader_parameter/game_over_fade", 0.0)
-	score_value_label.text = "0"
+	score_value_label.text = "000000"
+	high_score_value_label.text = "000000"
 	update_streak_visuals()
 
 	snake_head.position = Vector2(snake[0]) * TILE_SIZE

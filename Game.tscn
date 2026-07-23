@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://x0pabnngox6o" path="res://GridBorder.gd" id="6_gd"]
 [ext_resource type="Script" uid="uid://cf8ovtg7mv8ng" path="res://ScreenShake.gd" id="7_gd"]
 [ext_resource type="Script" uid="uid://b8jvxho013s4m" path="res://AudioManager.gd" id="8_gd"]
+[ext_resource type="Script" uid="uid://bi51jx5ih12n8" path="res://LetterWaveText.gd" id="9_gd"]
 [ext_resource type="Shader" uid="uid://s0c22yy5egum" path="res://grid_background.gdshader" id="10_sh"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_48a72"]
@@ -28,13 +29,13 @@ script = ExtResource("1_gd")
 [node name="TopBar" type="ColorRect" parent="." unique_id=1511685653]
 offset_right = 720.0
 offset_bottom = 56.0
-color = Color(0.05, 0.05, 0.07, 1)
+color = Color(0.03, 0.03, 0.035, 0.85)
 
 [node name="TopBarSeparator" type="ColorRect" parent="." unique_id=1482044407]
 offset_top = 56.0
 offset_right = 720.0
-offset_bottom = 58.0
-color = Color(0.25, 0.6, 0.9, 0.5)
+offset_bottom = 57.0
+color = Color(0.3, 0.8, 1, 0.35)
 
 [node name="GameArea" type="Node2D" parent="." unique_id=213611702]
 position = Vector2(0, 56)
@@ -82,103 +83,143 @@ script = ExtResource("8_gd")
 [node name="Camera2D" type="Camera2D" parent="." unique_id=986250353]
 script = ExtResource("7_gd")
 
-[node name="HUD" type="CanvasLayer" parent="." unique_id=411917940]
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1248793892]
 
-[node name="ScoreLabel" type="Label" parent="HUD" unique_id=245781817]
-offset_right = 104.0
-offset_bottom = 23.0
-theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "SCORE"
-
-[node name="ScoreValue" type="Label" parent="HUD" unique_id=81320943]
-offset_top = 16.0
-offset_right = 128.0
-offset_bottom = 52.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 26
-text = "0"
-
-[node name="BestLabel" type="Label" parent="HUD" unique_id=324783098]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -120.0
-offset_right = -16.0
-offset_bottom = 23.0
-grow_horizontal = 0
-theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
-theme_override_font_sizes/font_size = 16
-text = "BEST"
-horizontal_alignment = 2
-
-[node name="BestValue" type="Label" parent="HUD" unique_id=689586979]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -144.0
-offset_top = 16.0
-offset_bottom = 52.0
-grow_horizontal = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 26
-text = "0"
-horizontal_alignment = 2
-
-[node name="StreakLabel" type="Label" parent="HUD" unique_id=1007581019]
-offset_left = 240.0
-offset_top = 2.0
-offset_right = 480.0
-offset_bottom = 25.0
-theme_override_colors/font_color = Color(1, 0.4, 0.1, 1)
-theme_override_font_sizes/font_size = 16
-text = "STREAK x0"
-horizontal_alignment = 1
-
-[node name="ComboTimer" type="Control" parent="HUD" unique_id=1584734362]
+[node name="LeftSection" type="Control" parent="HUD" unique_id=1140220514]
 layout_mode = 3
 anchors_preset = 0
-offset_left = 240.0
-offset_top = 31.0
-offset_right = 480.0
-offset_bottom = 39.0
-mouse_filter = 2
+offset_left = 16.0
+offset_top = 6.0
+offset_right = 176.0
+offset_bottom = 50.0
+
+[node name="ScoreLabel" type="Control" parent="HUD/LeftSection" unique_id=1615716449]
+anchors_preset = 0
+script = ExtResource("9_gd")
+text = "SCORE"
+font_size = 12
+color = Color(0.3, 0.8, 1, 1)
+
+[node name="ScoreValue" type="Label" parent="HUD/LeftSection" unique_id=1595698420]
+layout_mode = 0
+offset_top = 14.0
+offset_right = 160.0
+offset_bottom = 44.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "000000"
+
+[node name="CenterSection" type="Control" parent="HUD" unique_id=950409159]
+layout_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 6.0
+offset_right = 120.0
+offset_bottom = 50.0
+grow_horizontal = 2
+
+[node name="StreakLabel" type="Control" parent="HUD/CenterSection" unique_id=1526310238]
+anchors_preset = 0
+offset_left = 50.0
+offset_right = 50.0
+script = ExtResource("9_gd")
+text = "STREAK"
+font_size = 11
+
+[node name="StreakMultiplier" type="Label" parent="HUD/CenterSection" unique_id=2144311231]
+layout_mode = 0
+offset_left = 64.0
+offset_top = 2.0
+offset_right = 120.0
+offset_bottom = 28.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "x1"
+
+[node name="ComboTimer" type="Control" parent="HUD/CenterSection" unique_id=1856346661]
+anchors_preset = 0
+offset_left = 50.0
+offset_top = 30.0
+offset_right = 170.0
+offset_bottom = 42.0
+pivot_offset = Vector2(60, 6)
 script = ExtResource("4_gd")
 
-[node name="GameOverLabel" type="Label" parent="HUD" unique_id=635960080]
-visible = false
+[node name="RightSection" type="Control" parent="HUD" unique_id=27850140]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -176.0
+offset_top = 6.0
+offset_right = -16.0
+offset_bottom = 50.0
+grow_horizontal = 0
+
+[node name="HighScoreLabel" type="Control" parent="HUD/RightSection" unique_id=836096068]
+anchors_preset = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_bottom = 14.0
+grow_horizontal = 0
+script = ExtResource("9_gd")
+text = "BEST"
+font_size = 10
+color = Color(0.3, 0.8, 1, 1)
+
+[node name="HighScoreValue" type="Label" parent="HUD/RightSection" unique_id=1817484719]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -160.0
+offset_top = 14.0
+offset_bottom = 44.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "000000"
+
+[node name="GameOverFrame" type="ColorRect" parent="HUD" unique_id=533386683]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -22.0
-offset_right = 150.0
-offset_bottom = 78.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(1, 0, 0, 1)
-theme_override_font_sizes/font_size = 48
-text = "GAME OVER"
-horizontal_alignment = 1
-vertical_alignment = 1
+offset_left = -160.0
+offset_top = -80.0
+offset_right = 160.0
+offset_bottom = 80.0
+color = Color(0, 0, 0, 0.85)
 
-[node name="RestartLabel" type="Label" parent="HUD" unique_id=1781159640]
-visible = false
-anchors_preset = 8
+[node name="GameOverLabel" type="Control" parent="HUD/GameOverFrame" unique_id=876572075]
+anchors_preset = 0
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -120.0
-offset_top = 48.0
+offset_top = -20.0
 offset_right = 120.0
-offset_bottom = 72.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 20
-text = "Press SPACE to restart"
-horizontal_alignment = 1
-vertical_alignment = 1
+offset_bottom = 20.0
+script = ExtResource("9_gd")
+text = "GAME OVER"
+font_size = 20
+color = Color(1, 0.2, 0.2, 1)
+
+[node name="RestartLabel" type="Label" parent="HUD" unique_id=1646894695]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = 20.0
+offset_right = 100.0
+offset_bottom = 44.0
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 14
+text = "PRESS SPACE"
