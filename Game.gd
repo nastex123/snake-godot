@@ -6,6 +6,7 @@ const GRID_HEIGHT := 18
 const COMBO_MAX_TIME := 3.0
 const STREAK_SPEED_BOOST := 0.008
 const BASE_MOVE_INTERVAL := 0.15
+const WAVE_DURATION := 0.6
 
 @onready var food: Area2D = $GameArea/Food
 @onready var snake_head: Area2D = $GameArea/SnakeHead
@@ -27,46 +28,39 @@ const BASE_MOVE_INTERVAL := 0.15
 var floating_text_scene = preload("res://FloatingText.gd")
 const EXPLOSION_EFFECT = preload("res://ExplosionEffect.gd")
 
-var snake: Array = []
-var body_parts: Array = []
-var direction := Vector2i.RIGHT
-var next_direction := Vector2i.RIGHT
-var score := 0
+var snake_controller: SnakeController
+var food_spawner: FoodSpawner
 var best_score := 0
-var game_over := false
+var body_parts: Array = []
 var move_timer := 0.0
 var move_interval := BASE_MOVE_INTERVAL
-var food_pos := Vector2i.ZERO
-var streak := 0
-var combo_time := 0.0
-var wave_time := 0.0
-var wave_flash := 0.0
-const WAVE_DURATION := 0.6
-
-var head_visual
-var food_visual: ColorRect
 
 func _ready() -> void:
 	randomize()
+	snake_controller = SnakeController.new()
+	snake_controller.name = "SnakeController"
+	game_area.add_child(snake_controller)
 
-	head_visual = preload("res://SnakeHead.gd").new()
-	head_visual.position = Vector2(TILE_SIZE / 2.0, TILE_SIZE / 2.0)
-	snake_head.add_child(head_visual)
+	var head_visual = preload("res://SnakeHead.gd").new()
+	snake_controller.set_head_visual(head_visual)
 
-	food_visual = ColorRect.new()
-	food_visual.size = Vector2(TILE_SIZE, TILE_SIZE)
-	food_visual.color = Color(1, 0, 0, 1)
-	food.add_child(food_visual)
+	food_spawner = FoodSpawner.new()
+	food_spawner.name = "FoodSpawner"
+	game_area.add_child(food_spawner)
+	food_spawner.setup(food)
 
-	reset_game()
+	EventBus.game_over.connect(_on_game_over)
+	GameManager.game_started.connect(_on_game_started)
+
+	snake_controller.ate_food.connect(_on_snake_ate_food)
+	snake_controller.hit_wall.connect(_on_snake_hit)
+	snake_controller.hit_self.connect(_on_snake_hit)
 
 	_setup_retro_font()
-
-	bg_shader.material.set("shader_parameter/streak_level", 0)
-	bg_shader.material.set("shader_parameter/wave_flash", 0.0)
+	reset_game()
 
 func _process(delta: float) -> void:
-	if game_over:
+	if GameManager.current_state == GameManager.State.GAME_OVER:
 		if Input.is_action_just_pressed("ui_accept"):
 			reset_game()
 		return
@@ -79,25 +73,25 @@ func _process(delta: float) -> void:
 
 	update_combo(delta)
 
-	if wave_time > 0:
-		wave_time = max(0.0, wave_time - delta)
-		if wave_time > 0:
-			bg_shader.material.set("shader_parameter/wave_time", wave_time)
+	if RunManager.run_data.get("wave_time", 0.0) > 0:
+		RunManager.run_data.wave_time = max(0.0, RunManager.run_data.wave_time - delta)
+		bg_shader.material.set("shader_parameter/wave_time", RunManager.run_data.wave_time)
 
-	if wave_flash > 0:
-		wave_flash = max(0.0, wave_flash - delta)
-		bg_shader.material.set("shader_parameter/wave_flash", wave_flash)
+	if RunManager.run_data.get("wave_flash", 0.0) > 0:
+		RunManager.run_data.wave_flash = max(0.0, RunManager.run_data.wave_flash - delta)
+		bg_shader.material.set("shader_parameter/wave_flash", RunManager.run_data.wave_flash)
 
 func update_combo(delta: float) -> void:
-	if combo_time > 0:
-		combo_time -= delta
-		if combo_time <= 0:
-			combo_time = 0.0
-			streak = 0
+	var combo = RunManager.run_data.get("combo_time", 0.0)
+	if combo > 0:
+		combo -= delta
+		if combo <= 0:
+			combo = 0.0
+			RunManager.set_streak(0)
 			update_streak_visuals()
-
-	combo_timer.set_ratio(combo_time / COMBO_MAX_TIME)
-	if streak == 0:
+	RunManager.set_combo_time(combo)
+	combo_timer.set_ratio(combo / COMBO_MAX_TIME)
+	if RunManager.run_data.streak == 0:
 		border_scanner.set_active(false)
 
 func handle_input() -> void:
@@ -110,66 +104,60 @@ func handle_input() -> void:
 		dir = Vector2i.LEFT
 	elif Input.is_action_just_pressed("ui_right"):
 		dir = Vector2i.RIGHT
-
-	if dir != Vector2i.ZERO and dir != -direction:
-		next_direction = dir
+	if dir != Vector2i.ZERO:
+		snake_controller.handle_input(dir)
 
 func move_snake() -> void:
-	direction = next_direction
-	head_visual.update_direction(direction)
-	var head_pos: Vector2i = snake[0] + direction
-
-	if head_pos.x < 0 or head_pos.x >= GRID_WIDTH or head_pos.y < 0 or head_pos.y >= GRID_HEIGHT:
-		end_game()
+	var food_pos = food_spawner.get_food_pos()
+	var success = snake_controller.move(food_pos)
+	if not success:
 		return
-
-	if head_pos in snake:
-		end_game()
-		return
-
-	snake.insert(0, head_pos)
-
-	var ate: bool = head_pos == food_pos
-	if ate:
-		streak = min(streak + 1, 5)
-		combo_time = COMBO_MAX_TIME
-		score += streak
-		score_value_label.text = "%06d" % score
-		move_interval = max(0.06, BASE_MOVE_INTERVAL - streak * STREAK_SPEED_BOOST)
-		update_streak_visuals()
-		streak_label.pulse()
-		streak_multiplier.scale = Vector2(1.0, 1.0)
-		var mt := create_tween().set_ease(Tween.EASE_OUT)
-		mt.tween_property(streak_multiplier, "scale", Vector2(1.3, 1.3), 0.05)
-		mt.tween_property(streak_multiplier, "scale", Vector2(1.0, 1.0), 0.1).set_trans(Tween.TRANS_ELASTIC)
-		combo_timer.bounce()
-		border_scanner.trigger_dash()
-		audio_manager.play_eat(streak)
-		screen_shake.shake((streak - 1) * 0.8 + 0.5)
-		var ft := floating_text_scene.new()
-		ft.play(food_pos, get_streak_color(streak), streak)
-		game_area.add_child(ft)
-		var exp := EXPLOSION_EFFECT.new()
-		game_area.add_child(exp)
-		exp.play(food_pos, get_streak_color(streak), streak)
-		wave_time = WAVE_DURATION
-		bg_shader.material.set("shader_parameter/wave_time", WAVE_DURATION)
-		bg_shader.material.set("shader_parameter/wave_center", Vector2(
-			float(food_pos.x) / GRID_WIDTH,
-			float(food_pos.y) / GRID_HEIGHT
-		))
-		if streak == 5:
-			wave_flash = 0.15
-			bg_shader.material.set("shader_parameter/wave_flash", wave_flash)
-		spawn_food()
-	else:
-		snake.pop_back()
 
 	update_body()
-	if ate:
-		trigger_growth_flash()
+
+func _on_snake_ate_food(pos: Vector2i) -> void:
+	var old_streak = RunManager.run_data.streak
+	var streak_val = min(old_streak + 1, 5)
+	RunManager.set_streak(streak_val)
+	RunManager.set_combo_time(COMBO_MAX_TIME)
+	EventBus.food_eaten.emit(pos, streak_val)
+
+	RunManager.add_score(streak_val)
+	score_value_label.text = "%06d" % RunManager.run_data.score
+	move_interval = max(0.06, BASE_MOVE_INTERVAL - streak_val * STREAK_SPEED_BOOST)
+	update_streak_visuals()
+	streak_label.pulse()
+	streak_multiplier.scale = Vector2(1.0, 1.0)
+	var mt := create_tween().set_ease(Tween.EASE_OUT)
+	mt.tween_property(streak_multiplier, "scale", Vector2(1.3, 1.3), 0.05)
+	mt.tween_property(streak_multiplier, "scale", Vector2(1.0, 1.0), 0.1).set_trans(Tween.TRANS_ELASTIC)
+	combo_timer.bounce()
+	border_scanner.trigger_dash()
+	audio_manager.play_eat(streak_val)
+	screen_shake.shake((streak_val - 1) * 0.8 + 0.5)
+	var ft := floating_text_scene.new()
+	ft.play(food_spawner.get_food_pos(), get_streak_color(streak_val), streak_val)
+	game_area.add_child(ft)
+	var exp := EXPLOSION_EFFECT.new()
+	game_area.add_child(exp)
+	exp.play(food_spawner.get_food_pos(), get_streak_color(streak_val), streak_val)
+	RunManager.run_data.wave_time = WAVE_DURATION
+	bg_shader.material.set("shader_parameter/wave_time", WAVE_DURATION)
+	bg_shader.material.set("shader_parameter/wave_center", Vector2(
+		float(food_spawner.get_food_pos().x) / GRID_WIDTH,
+		float(food_spawner.get_food_pos().y) / GRID_HEIGHT
+	))
+	if streak_val == 5:
+		RunManager.run_data.wave_flash = 0.15
+		bg_shader.material.set("shader_parameter/wave_flash", 0.15)
+	food_spawner.spawn(snake_controller.snake)
+	trigger_growth_flash()
+
+func _on_snake_hit() -> void:
+	end_game()
 
 func update_streak_visuals() -> void:
+	var streak = RunManager.run_data.streak
 	if streak > 0:
 		streak_label.text = "STREAK"
 		streak_label.visible = true
@@ -178,7 +166,7 @@ func update_streak_visuals() -> void:
 		var c := get_streak_color(streak)
 		streak_label.set_text_color(c)
 		streak_multiplier.add_theme_color_override("font_color", c)
-		food_visual.color = c
+		food_spawner.set_food_color(c)
 		border_scanner.set_streak(streak)
 		border_scanner.set_active(true)
 		combo_timer.set_color(c)
@@ -187,7 +175,7 @@ func update_streak_visuals() -> void:
 		streak_label.text = ""
 		streak_label.visible = false
 		streak_multiplier.visible = false
-		food_visual.color = Color(1, 0, 0, 1)
+		food_spawner.set_food_color(Color(1, 0, 0, 1))
 		border_scanner.set_streak(0)
 		border_scanner.set_active(false)
 		combo_timer.set_color(Color(1.0, 0.53, 0.0, 1.0))
@@ -208,15 +196,15 @@ func update_body() -> void:
 		part.queue_free()
 	body_parts.clear()
 
-	for i in range(1, snake.size()):
+	for i in range(1, snake_controller.snake.size()):
 		var rect := ColorRect.new()
 		rect.size = Vector2(TILE_SIZE, TILE_SIZE)
-		rect.position = Vector2(snake[i]) * TILE_SIZE
+		rect.position = Vector2(snake_controller.snake[i]) * TILE_SIZE
 		rect.color = Color(0, 0.7, 0, 1)
 		snake_body.add_child(rect)
 		body_parts.append(rect)
 
-	snake_head.position = Vector2(snake[0]) * TILE_SIZE
+	snake_head.position = Vector2(snake_controller.snake[0]) * TILE_SIZE
 
 func trigger_growth_flash() -> void:
 	for i in body_parts.size():
@@ -227,33 +215,17 @@ func trigger_growth_flash() -> void:
 		tween.tween_property(part, "color", Color.WHITE, 0.01)
 		tween.tween_property(part, "color", Color(0, 0.7, 0, 1), 10.0).set_ease(Tween.EASE_OUT)
 
-func spawn_food() -> void:
-	var free_cells: Array = []
-	for x in GRID_WIDTH:
-		for y in GRID_HEIGHT:
-			var cell := Vector2i(x, y)
-			if not cell in snake:
-				free_cells.append(cell)
-
-	if free_cells.is_empty():
-		return
-
-	food_pos = free_cells[randi() % free_cells.size()]
-	food.position = Vector2(food_pos) * TILE_SIZE
-
-func end_game() -> void:
-	game_over = true
+func _on_game_over(_reason: String) -> void:
 	game_over_frame.visible = true
 	game_over_label.visible = true
 	game_over_label.pulse()
 	restart_label.visible = true
 
-	if score > best_score:
-		best_score = score
+	if RunManager.run_data.score > best_score:
+		best_score = RunManager.run_data.score
 		high_score_value_label.text = "%06d" % best_score
 
-	combo_time = 0.0
-	streak = 0
+	RunManager.set_streak(0)
 	update_streak_visuals()
 
 	var tw := create_tween()
@@ -274,22 +246,16 @@ func _setup_retro_font() -> void:
 	for lbl in labels:
 		lbl.label_settings = ls
 
+func _on_game_started() -> void:
+	reset_game()
+
 func reset_game() -> void:
-	snake.clear()
-	snake.append(Vector2i(15, 9))
-	snake.append(Vector2i(14, 9))
-	snake.append(Vector2i(13, 9))
-	snake.append(Vector2i(12, 9))
-	direction = Vector2i.RIGHT
-	next_direction = Vector2i.RIGHT
-	score = 0
+	RunManager.reset_run()
+	snake_controller.reset(Vector2i(15, 9), Vector2i.RIGHT)
 	move_interval = BASE_MOVE_INTERVAL
 	move_timer = 0.0
-	game_over = false
-	streak = 0
-	combo_time = 0.0
-	wave_time = 0.0
-	wave_flash = 0.0
+	RunManager.run_data.wave_time = 0.0
+	RunManager.run_data.wave_flash = 0.0
 	bg_shader.material.set("shader_parameter/wave_time", 0.0)
 	bg_shader.material.set("shader_parameter/wave_flash", 0.0)
 	game_over_frame.visible = false
@@ -297,11 +263,13 @@ func reset_game() -> void:
 	restart_label.visible = false
 	bg_shader.material.set("shader_parameter/game_over_fade", 0.0)
 	score_value_label.text = "000000"
-	high_score_value_label.text = "000000"
+	high_score_value_label.text = "%06d" % best_score
 	update_streak_visuals()
 
-	snake_head.position = Vector2(snake[0]) * TILE_SIZE
-	head_visual.update_direction(direction)
-
+	snake_head.position = Vector2(snake_controller.snake[0]) * TILE_SIZE
 	update_body()
-	spawn_food()
+	food_spawner.spawn(snake_controller.snake)
+
+func end_game() -> void:
+	EventBus.game_over.emit("death")
+	GameManager.end_run("death")

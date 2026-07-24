@@ -5,9 +5,16 @@
 | Path | Role |
 |------|------|
 | `Game.tscn` | Main scene, root entrypoint |
-| `Game.gd` | All game logic: input, movement, streak, HUD, visual effects |
+| `Game.gd` | Reduced to ~270 lines — connects EventBus, delegates to SnakeController/FoodSpawner |
 | `GameArea` (Node2D at y=56) | Contains grid, food, snake, scanner — 720×432 local coords |
 | `TopBar` (ColorRect, y=0-56) | HUD background above game area |
+| `autoload/GameManager.gd` | State machine (Autoload) |
+| `autoload/RunManager.gd` | Run data: score, streak, gold, xp, level, stats (Autoload) |
+| `autoload/EventBus.gd` | Centralized signals between systems (Autoload) |
+| `scripts/DamageSystem.gd` | Damage calc, healing, shields, armor |
+| `resources/StatResource.gd` | Reusable stat resource (Resource) |
+| `scenes/player/SnakeController.gd` | Snake movement, input, collision logic |
+| `scenes/food/FoodSpawner.gd` | Food spawn logic (free cells, random position) |
 | `ComboTimer.gd` | Rectangular two-layer timer bar (gray buffer, streak-colored fill) |
 | `GridTexture.gd` | Seamless 24×24 tile → tiled across 720×432 |
 | `GridBorder.gd` | 2px black outline around the grid |
@@ -23,12 +30,11 @@
 ## Key mechanics
 
 - Board: 30×18 tiles at 24px = 720×432
-- Streak cap: **5**. Colors cycle: orange→gold→green→cyan→purple
+- Streak cap: **5**. Colors cycle: green→blue→yellow→orange→purple
 - Speed: resets to `BASE_MOVE_INTERVAL` (0.15s) on streak end; `max(0.06, BASE - streak * 0.008)` per eat
 - Combo timer: 3s window, resets on eat
-- `update_streak_visuals()` called whenever streak changes — handles label, food color, scanner color, combo timer bar color, shader streak level, speed reset, and explosion color
+- `update_streak_visuals()` called whenever streak changes
 - `get_streak_color(s) -> Color`: single source of truth for all streak colors
-- `move_interval` recalcula desde BASE en cada eat, no se acumula
 
 ## Shader uniforms
 
@@ -50,6 +56,35 @@
 - **Screen shake**: Intensity scales with streak
 - **Floating text**: Streak level popup at food position
 - **Game-over fade**: Halftone dots turn red via shader
+
+## Fase 1 — Estado actual
+
+### Completado
+- [x] Estructura de carpetas (`autoload/`, `resources/`, `scripts/`, `scenes/player/`, `scenes/food/`, etc.)
+- [x] `GameManager.gd` — autoload con máquina de estados
+- [x] `RunManager.gd` — autoload con datos de run, stats base, XP, oro
+- [x] `StatResource.gd` — resource con stats exportables
+- [x] `DamageSystem.gd` — cálculo de daño, cura, escudos, invulnerabilidad
+- [x] `EventBus.gd` — autoload con señales centralizadas
+- [x] `SnakeController.gd` — lógica de movimiento extraída de Game.gd
+- [x] `FoodSpawner.gd` — lógica de spawn de comida extraída de Game.gd
+- [x] `Game.gd` refactorizado (~274 líneas) usando SnakeController, FoodSpawner, autoloads
+- [x] Autoloads registrados en `project.godot`
+
+### Pendiente (bugs conocidos)
+- [x] `best_score` se resetea entre runs — mover a Game.gd como variable persistente
+- [x] `end_game()` no emite `EventBus.game_over` — arreglar flujo
+- [x] Verificar que el juego compile y corra sin errores en Godot
+- [ ] Commit y push de Fase 1 en rama `fase_01`best_score` se resetea entre runs — mover a Game.gd como variable persistente
+- [ ] `end_game()` no emite `EventBus.game_over` — arreglar flujo
+- [ ] Verificar que el juego compile y corra sin errores en Godot
+- [ ] Commit y push de Fase 1 en rama `fase_01`
+
+### Documentación
+- `Documentacion/GDD.md` — Game Design Document v2.0
+- `Documentacion/ROADMAP.md` — 9 fases de desarrollo
+- `Documentacion/FASE_01_Fundamentos.md` — diseño de Fase 1
+- `Documentacion/FASE_02_HUD.md` a `FASE_09_Pulido.md` — fases restantes
 
 ## How to test
 
