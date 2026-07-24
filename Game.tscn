@@ -94,6 +94,7 @@ offset_right = 176.0
 offset_bottom = 50.0
 
 [node name="ScoreLabel" type="Control" parent="HUD/LeftSection" unique_id=1615716449]
+custom_minimum_size = Vector2(60, 12)
 anchors_preset = 0
 script = ExtResource("9_gd")
 text = "SCORE"
@@ -121,6 +122,7 @@ offset_bottom = 50.0
 grow_horizontal = 2
 
 [node name="StreakLabel" type="Control" parent="HUD/CenterSection" unique_id=1526310238]
+custom_minimum_size = Vector2(66, 11)
 anchors_preset = 0
 offset_left = 50.0
 offset_right = 50.0
@@ -130,10 +132,11 @@ font_size = 11
 
 [node name="StreakMultiplier" type="Label" parent="HUD/CenterSection" unique_id=2144311231]
 layout_mode = 0
-offset_left = 64.0
-offset_top = 2.0
-offset_right = 120.0
-offset_bottom = 28.0
+offset_left = 123.0
+offset_top = -6.0
+offset_right = 154.0
+offset_bottom = 33.0
+scale = Vector2(0.5, 0.5)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 28
 text = "x1"
@@ -159,6 +162,7 @@ offset_bottom = 50.0
 grow_horizontal = 0
 
 [node name="HighScoreLabel" type="Control" parent="HUD/RightSection" unique_id=836096068]
+custom_minimum_size = Vector2(40, 10)
 anchors_preset = 0
 anchor_left = 1.0
 anchor_right = 1.0
@@ -195,6 +199,7 @@ offset_bottom = 80.0
 color = Color(0, 0, 0, 0.85)
 
 [node name="GameOverLabel" type="Control" parent="HUD/GameOverFrame" unique_id=876572075]
+custom_minimum_size = Vector2(180, 20)
 anchors_preset = 0
 anchor_left = 0.5
 anchor_top = 0.5

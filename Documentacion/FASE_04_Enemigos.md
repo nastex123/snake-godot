@@ -1,0 +1,351 @@
+# FASE 04 — Enemigos y combate
+
+## Objetivo
+
+Transformar el Snake en un juego de acción con 5 tipos de enemigos, IA, proyectiles y sistema de combate completo.
+
+---
+
+## Orden de implementación
+
+### Paso 1: EnemyData (Resource)
+
+**Archivo:** `resources/EnemyData.gd`
+
+```gdscript
+extends Resource
+class_name EnemyData
+
+enum EnemyType { SLIME, SPIDER, TOWER, GHOST, WORM, ELITE }
+
+@export var enemy_id: String
+@export var enemy_type: EnemyType
+@export var display_name: String
+@export var max_hp: float = 50.0
+@export var damage: float = 10.0
+@export var speed: float = 1.0
+@export var attack_cooldown: float = 1.0
+@export var xp_drop: int = 10
+@export var gold_drop: int = 5
+@export var grid_size: Vector2i = Vector2i(1, 1)  # para Worm
+@export var projectile_scene: PackedScene
+@export var sprite: Texture2D
+@export var color: Color = Color.WHITE
+```
+
+### Paso 2: Enemy base
+
+**Archivo:** `scenes/enemy/Enemy.gd`
+
+```gdscript
+extends Area2D
+class_name Enemy
+
+@export var data: EnemyData
+signal died(enemy: Enemy)
+signal hp_changed(current: float, max_hp: float)
+
+var current_hp: float = 0.0
+var is_alive: bool = true
+var grid_pos: Vector2i
+var _attack_timer: float = 0.0
+
+func setup(enemy_data: EnemyData, position: Vector2i) -> void:
+    data = enemy_data
+    grid_pos = position
+    global_position = Vector2(position) * 24
+    current_hp = data.max_hp
+
+func take_damage(amount: float) -> void:
+    if not is_alive: return
+    current_hp -= amount
+    hp_changed.emit(current_hp, data.max_hp)
+    if current_hp <= 0:
+        die()
+
+func die() -> void:
+    is_alive = false
+    died.emit(self)
+    # partículas, sonido, loot
+    EventBus.enemy_killed.emit(data.enemy_type, global_position)
+    queue_free()
+
+func _on_body_entered(body: Node2D) -> void:
+    if body.is_in_group("snake_head") and is_alive:
+        # Daño al jugador (vía DamageSystem)
+        pass
+```
+
+### Paso 3: Slime
+
+**Archivo:** `scenes/enemy/Slime.gd`
+
+```gdscript
+extends Enemy
+class_name Slime
+
+var move_timer: float = 0.0
+var move_interval: float = 0.8
+
+func _process(delta: float) -> void:
+    if not is_alive: return
+    move_timer += delta
+    if move_timer >= move_interval:
+        move_timer = 0.0
+        _move_toward_player()
+
+func _move_toward_player() -> void:
+    var player_pos = GameManager.get_player_grid_pos()
+    if player_pos == Vector2i.ZERO: return
+    
+    var dir = player_pos - grid_pos
+    var move_dir = Vector2i.ZERO
+    if abs(dir.x) > abs(dir.y):
+        move_dir = Vector2i(sign(dir.x), 0)
+    else:
+        move_dir = Vector2i(0, sign(dir.y))
+    
+    var new_pos = grid_pos + move_dir
+    if RoomManager.is_cell_available(new_pos):
+        grid_pos = new_pos
+        var tw = create_tween()
+        tw.tween_property(self, "global_position", Vector2(new_pos) * 24, move_interval * 0.9)
+```
+
+### Paso 4: Spider
+
+**Archivo:** `scenes/enemy/Spider.gd`
+
+```gdscript
+extends Enemy
+class_name Spider
+
+var move_timer: float = 0.0
+var move_interval: float = 0.3  # más rápido que Slime
+
+func _process(delta: float) -> void:
+    if not is_alive: return
+    move_timer += delta
+    if move_timer >= move_interval:
+        move_timer = 0.0
+        _move_toward_player()
+
+func _move_toward_player() -> void:
+    var player_pos = GameManager.get_player_grid_pos()
+    if player_pos == Vector2i.ZERO: return
+    var dir = player_pos - grid_pos
+    var move_dir = Vector2i(sign(dir.x), 0) if abs(dir.x) > 0 else Vector2i(0, sign(dir.y))
+    var new_pos = grid_pos + move_dir
+    if RoomManager.is_cell_available(new_pos):
+        grid_pos = new_pos
+        global_position = Vector2(new_pos) * 24
+```
+
+### Paso 5: Tower
+
+**Archivo:** `scenes/enemy/Tower.gd`
+
+```gdscript
+extends Enemy
+class_name Tower
+
+func _ready() -> void:
+    _attack_timer = data.attack_cooldown
+
+func _process(delta: float) -> void:
+    if not is_alive: return
+    _attack_timer -= delta
+    if _attack_timer <= 0:
+        _attack_timer = data.attack_cooldown
+        _shoot()
+
+func _shoot() -> void:
+    var player_pos = GameManager.get_player_grid_pos()
+    var dir = (Vector2(player_pos) - Vector2(grid_pos)).normalized()
+    var proj = data.projectile_scene.instantiate()
+    proj.setup(grid_pos, dir, data.damage)
+    get_parent().add_child(proj)
+```
+
+### Paso 6: Ghost
+
+**Archivo:** `scenes/enemy/Ghost.gd`
+
+Atraviesa obstáculos (no colisiona con el cuerpo de la serpiente ni con otras entidades).
+
+```gdscript
+extends Enemy
+class_name Ghost
+
+func _ready() -> void:
+    # Sin colisión física — solo daño al superponerse
+    monitoring = false
+    set_process(true)
+
+func _process(delta: float) -> void:
+    if not is_alive: return
+    _move_toward_player()
+    _check_overlap()
+
+func _move_toward_player() -> void:
+    var player_pos = GameManager.get_player_grid_pos()
+    var dir = sign(Vector2(player_pos - grid_pos))
+    grid_pos += Vector2i(dir)
+    global_position = Vector2(grid_pos) * 24
+
+func _check_overlap() -> void:
+    var player_pos = GameManager.get_player_grid_pos()
+    if grid_pos == player_pos:
+        EventBus.damage_taken.emit(data.damage, "ghost")
+```
+
+### Paso 7: Worm
+
+**Archivo:** `scenes/enemy/Worm.gd`
+
+Ocupa 2+ casillas. Se mueve como un mini-snake.
+
+```gdscript
+extends Enemy
+class_name Worm
+
+var segments: Array[Vector2i] = []
+var move_timer: float = 0.0
+var move_interval: float = 0.5
+
+func setup(enemy_data: EnemyData, position: Vector2i) -> void:
+    super.setup(enemy_data, position)
+    segments = [position, position + Vector2i.LEFT, position + Vector2i.LEFT * 2]
+    _update_visuals()
+
+func _process(delta: float) -> void:
+    if not is_alive: return
+    move_timer += delta
+    if move_timer >= move_interval:
+        move_timer = 0.0
+        _move()
+
+func _move() -> void:
+    var player_pos = GameManager.get_player_grid_pos()
+    var dir = _choose_best_dir(player_pos)
+    var new_head = segments[0] + dir
+    # Check colisión con bordes/propio cuerpo
+    if RoomManager.is_cell_available(new_head) and not new_head in segments:
+        segments.push_front(new_head)
+        segments.pop_back()
+        _update_visuals()
+
+func die() -> void:
+    for seg in segments:
+        # liberar celdas ocupadas
+        pass
+    super.die()
+```
+
+### Paso 8: Elite
+
+**Archivo:** `scenes/enemy/Elite.gd`
+
+Versión potenciada de cualquier enemigo base. Stats multiplicados, loot mejorado.
+
+```gdscript
+extends Enemy
+class_name Elite
+
+func setup(enemy_data: EnemyData, position: Vector2i) -> void:
+    var elite_data = enemy_data.duplicate()
+    elite_data.max_hp *= 3.0
+    elite_data.damage *= 2.0
+    elite_data.speed *= 1.5
+    elite_data.xp_drop *= 5
+    elite_data.gold_drop *= 10
+    super.setup(elite_data, position)
+    modulate = Color(1, 0.8, 0.2)  # dorado
+```
+
+### Paso 9: Projectile system
+
+**Archivo:** `scenes/projectiles/Projectile.gd`
+
+```gdscript
+extends Area2D
+class_name Projectile
+
+var grid_pos: Vector2i
+var direction: Vector2
+var speed: float = 200.0
+var damage: float = 10.0
+var pierce: bool = false
+
+func setup(pos: Vector2i, dir: Vector2, dmg: float) -> void:
+    grid_pos = pos
+    direction = dir
+    damage = dmg
+    global_position = Vector2(pos) * 24 + Vector2(12, 12)
+
+func _process(delta: float) -> void:
+    global_position += direction * speed * delta
+    # Si sale del grid, queue_free()
+    if global_position.x < -24 or global_position.x > 720 or global_position.y < -24 or global_position.y > 432:
+        queue_free()
+
+func _on_body_entered(body: Node2D) -> void:
+    if body.is_in_group("snake_head"):
+        EventBus.damage_taken.emit(damage, "projectile")
+        if not pierce:
+            queue_free()
+```
+
+---
+
+## Spawn de enemigos
+
+En RoomManager, al entrar a una sala:
+
+```gdscript
+func spawn_enemies(room_data: RoomData) -> void:
+    for spawn in room_data.enemy_spawns:
+        var data = load(spawn.data_path)
+        var enemy_scene = load(spawn.scene_path)
+        var enemy = enemy_scene.instantiate()
+        enemy.setup(data, Vector2i(spawn.x, spawn.y))
+        add_child(enemy)
+```
+
+---
+
+## Conexiones con EventBus
+
+| Evento | Reacción |
+|--------|----------|
+| `damage_taken` | Restar vida en RunManager, animación de daño |
+| `enemy_killed` | Sumar XP/oro, verificar sala limpia |
+| `room_cleared` | Desactivar spawn, abrir puertas de salida |
+
+---
+
+## Criterios de aceptación
+
+- [ ] 5 tipos de enemigos funcionales (Slime, Spider, Tower, Ghost, Worm)
+- [ ] Elite version potenciada con color dorado
+- [ ] Proyectiles viajan y hacen daño al impactar
+- [ ] IA básica funcional: persecución, disparo, ataque
+- [ ] Ghost atraviesa obstáculos correctamente
+- [ ] Worm ocupa múltiples casillas y se mueve como mini-snake
+- [ ] Enemigos dropean XP y oro al morir
+- [ ] Daño al jugador reduce vida (no muerte instantánea)
+- [ ] Spawn de enemigos desde RoomData
+- [ ] Sala se limpia cuando todos los enemigos mueren
+- [ ] No hay errores de colisión o pathfinding
+
+---
+
+## Notas técnicas Godot
+
+- Enemies usan Area2D para detección de colisiones con la cabeza de la serpiente
+- El grid detection se hace por coordenadas, no físicas (más preciso)
+- Ghost no usa física — solo verifica superposición de grid_pos cada frame
+- Worm mantiene un array de segmentos que ocupan el grid
+- Proyectiles se manejan como Area2D con movimiento libre (no grid)
+- El daño se envía via EventBus, no directo al jugador
+- Para pathfinding simple: movimiento cardinal hacia el jugador (priorizar eje X o Y)
