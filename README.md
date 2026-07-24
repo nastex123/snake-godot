@@ -1,78 +1,45 @@
-# Snake
+# Snake Roguelite
 
-Retro arcade Snake hecho en Godot 4.7.1 con estilo cómic retro y font Press Start 2P.
+Retro arcade Snake transformado en un **roguelite de acción** con salas procedurales, enemigos, builds, reliquias, habilidades, biomas, jefes y metaprogresión. Hecho en Godot 4.7.1 con estilo cómic retro y font Press Start 2P.
 
-## Gameplay
+**Documentación completa:** [`Documentacion/`](Documentacion/)
 
-- Tablero 30×18 tiles — 720×432px (viewport stretch "viewport", aspect "keep")
-- Come la comida para sumar puntos y crecer
-- **Racha (streak)**: come seguido dentro de 3s para aumentar el combo. Máximo x5.
-- La velocidad aumenta con cada comida (`max(0.06, 0.15 - streak * 0.008)`) y se resetea al terminar la racha
-- Puntuación: cada comida suma `streak` puntos (1→2→3→4→5)
+| Archivo | Contenido |
+|---------|-----------|
+| [`GDD.md`](Documentacion/GDD.md) | Game Design Document v2.0 — visión completa del juego |
+| [`ROADMAP.md`](Documentacion/ROADMAP.md) | Plan de desarrollo en 9 fases |
+| [`FASE_01_Fundamentos.md`](Documentacion/FASE_01_Fundamentos.md) | Arquitectura, stats, daño, eventos, RunData, migración |
+| [`FASE_02_HUD.md`](Documentacion/FASE_02_HUD.md) | HUD modular: HPBar, XPBar, SkillBar, RelicSlot, Minimap |
+| [`FASE_03_Salas.md`](Documentacion/FASE_03_Salas.md) | Sistema de salas, generación procedural, puertas |
+| [`FASE_04_Enemigos.md`](Documentacion/FASE_04_Enemigos.md) | 5 tipos de enemigos + élites + proyectiles |
+| [`FASE_05_Objetos.md`](Documentacion/FASE_05_Objetos.md) | 100+ reliquias, 7 habilidades, sinergias, builds |
+| [`FASE_06_Eventos.md`](Documentacion/FASE_06_Eventos.md) | Tiendas, eventos aleatorios, cofres, NPCs |
+| [`FASE_07_Biomas.md`](Documentacion/FASE_07_Biomas.md) | 4 biomas con paletas únicas, 4 jefes con 3 fases |
+| [`FASE_08_Metaprogresion.md`](Documentacion/FASE_08_Metaprogresion.md) | Mejoras permanentes, logros, persistencia |
+| [`FASE_09_Pulido.md`](Documentacion/FASE_09_Pulido.md) | Menús, audio, partículas, balance, exportación |
 
-### Colores por racha
+## Estado actual
 
-| x1 | x2 | x3 | x4 | x5 |
-|----|----|----|----|----|
-| 🟢 | 🔵 | 🟡 | 🟠 | 🟣 |
+Implementando **Fase 1** — migrando la arquitectura monolítica (`Game.gd`) a un sistema modular con autoloads, EventBus, sistema de daño, RunData y estado.
 
-## Visuales
+### Gameplay base (heredado)
 
-### HUD retro (`LetterWaveText.gd`)
+- Tablero 30×18 tiles — 720×432px
+- Movimiento grid-based clásico de Snake
+- **Streak**: combo al comer seguido (máx x5), colores: verde→azul→amarillo→naranja→púrpura
+- Velocidad: `max(0.06, 0.15 - streak * 0.008)` — se acelera con cada comida
+- Puntuación: cada comida suma `streak` puntos
 
-- Font **Press Start 2P** en toda la interfaz con contorno negro via `LabelSettings`
-- `LetterWaveText`: Control que divide el texto en Labels individuales con animación sine-wave (offset Y sinusoidal)
-- Efecto `pulse()` — onda extra al comer, decae en ~1s
-- HUD dividido en 3 secciones: Left (SCORE + valor), Center (STREAK + multiplicador + barra combo), Right (BEST + valor)
-- Barra de combo (`ComboTimer.gd`) con `bounce()` — animación elástica al comer
+### Visuales (base)
 
-### Colores HUD
-
-- Textos estáticos en cyan claro (`#4DCCFF`)
-- Valores en blanco
-- Game Over en rojo (`#FF3333`)
-
-### Shader de fondo (`grid_background.gdshader`)
-
-- Halftone squares (cuadraditos) por tile — efecto cómic
-- **Breathing**: onda expansiva que respira desde el centro del grid cada 2.5s
-- **Eat wave**: onda cuadrada (Chebyshev distance) que se expande desde la comida al comer, con grosor y brillo según racha
-- **Multi-wave**: dos ondas simultáneas para racha ≥3
-- **Flash**: pantallazo blanco en racha 5 (`wave_flash`, 150ms)
-- **Game-over fade**: los cuadraditos se vuelven rojos gradualmente al morir
-
-### Partículas de explosión (`ExplosionEffect.gd`)
-
-Al comer, una ráfaga de ColorRects con formas progresivas por racha:
-
-| Racha | Efecto |
-|-------|--------|
-| x1 | Cuadrados base en dispersión radial |
-| x2 | +4 rayos alargados en direcciones cardinales |
-| x3 | +8 partículas rotadas (estrella 8 puntas) |
-| x4 | +4 líneas finas formando un anillo cuadrado |
-| x5 | + estrella central blanca + doble anillo |
-
-### Growth flash
-
-Al comer, cada segmento del cuerpo se vuelve blanco por 0.2s y vuelve a verde en 0.6s, con 0.1s de retardo entre segmentos.
-
-### Border Scanner
-
-Animación de escáneres duales opuestos en el perímetro del grid, con color según racha.
-
-### Screen Shake
-
-La cámara tiembla al comer con intensidad según racha (0.5–3.7).
-
-### Floating text
-
-Texto "STREAK xN" flotante animado que aparece en la posición de la comida al comer.
-
-### Game Over
-
-- Frame negro semitransparente centrado con "GAME OVER" rojo (LetterWaveText animado) + "PRESS SPACE"
-- Los cuadraditos del fondo se tiñen de rojo (fade vía shader)
+- Font **Press Start 2P** con contorno negro vía `LabelSettings`
+- `LetterWaveText.gd`: texto con animación sine-wave por carácter (`@tool` + `_show_preview()`)
+- `ComboTimer.gd`: barra de combo con animación elástica
+- `grid_background.gdshader`: halftone squares, breathing, eat wave, multi-wave, flash, game-over fade
+- `ExplosionEffect.gd`: partículas con formas progresivas según racha
+- `BorderScanner.gd`: escáneres duales animados en el perímetro
+- `ScreenShake.gd`: cámara tiembla al comer (intensidad según racha)
+- `FloatingText.gd`: texto "STREAK xN" en posición de la comida
 
 ## Controles
 
@@ -80,6 +47,7 @@ Texto "STREAK xN" flotante animado que aparece en la posición de la comida al c
 |-------|--------|
 | ← ↑ ↓ → | Dirección de la serpiente |
 | Space | Reiniciar tras Game Over |
+| Q/E/R/F | Habilidades activas (Fase 5) |
 
 ## Ejecutar
 
