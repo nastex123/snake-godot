@@ -75,10 +75,7 @@
 - [x] `best_score` se resetea entre runs — mover a Game.gd como variable persistente
 - [x] `end_game()` no emite `EventBus.game_over` — arreglar flujo
 - [x] Verificar que el juego compile y corra sin errores en Godot
-- [ ] Commit y push de Fase 1 en rama `fase_01`best_score` se resetea entre runs — mover a Game.gd como variable persistente
-- [ ] `end_game()` no emite `EventBus.game_over` — arreglar flujo
-- [ ] Verificar que el juego compile y corra sin errores en Godot
-- [ ] Commit y push de Fase 1 en rama `fase_01`
+- [x] Commit y push de Fase 1 en rama `fase_01`
 
 ### Documentación
 - `Documentacion/GDD.md` — Game Design Document v2.0
