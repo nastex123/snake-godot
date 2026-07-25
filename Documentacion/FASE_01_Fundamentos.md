@@ -10,7 +10,7 @@ Transformar el Snake arcade actual en una arquitectura modular preparada para un
 
 Cada paso debe completarse y verificarse antes de pasar al siguiente.
 
-### Paso 1: Estructura de carpetas
+### Paso 1: Estructura de carpetas ✅
 
 ```
 autoload/
@@ -30,7 +30,7 @@ fonts/
 assets/
 ```
 
-### Paso 2: GameManager (Autoload)
+### Paso 2: GameManager (Autoload) ✅
 
 **Archivo:** `autoload/GameManager.gd`
 
@@ -64,7 +64,7 @@ func end_run(reason: String) -> void:
     game_ended.emit(reason)
 ```
 
-### Paso 3: RunData (Recurso/Objeto)
+### Paso 3: RunData (Recurso/Objeto) ✅
 
 **Archivo:** `autoload/RunManager.gd`
 
@@ -137,7 +137,7 @@ func _xp_for_next_level() -> int:
     return run_data.level * 50
 ```
 
-### Paso 4: Sistema de estadísticas (Resource)
+### Paso 4: Sistema de estadísticas (Resource) ✅
 
 **Archivo:** `resources/StatResource.gd`
 
@@ -162,7 +162,7 @@ class_name StatResource
 @export var streak_multiplier: float = 1.0
 ```
 
-### Paso 5: Sistema de daño
+### Paso 5: Sistema de daño ✅
 
 **Archivo:** `scripts/DamageSystem.gd`
 
@@ -217,9 +217,9 @@ func set_invulnerable(duration: float) -> void:
     _invulnerability_timer = duration
 ```
 
-### Paso 6: Sistema de eventos (EventBus)
+### Paso 6: Sistema de eventos (EventBus) ✅
 
-**Archivo:** `scripts/EventBus.gd`
+**Archivo:** `autoload/EventBus.gd`
 
 Autoload que centraliza todas las señales del juego. Ningún sistema llama directamente a otro.
 
@@ -241,27 +241,34 @@ signal boss_phase_changed(phase: int)
 signal game_over(reason: String)
 ```
 
-### Paso 7: Migration de Game.gd
+### Paso 7: Migration de Game.gd ✅ (parcial)
 
-1. Crear `scenes/player/SnakeController.gd` — refactorizar lógica de movimiento desde Game.gd
-2. Crear `scenes/food/FoodSpawner.gd` — lógica de spawn de comida separada
-3. Game.gd se reduce a conectar EventBus y delegar a los managers
-4. Stats del jugador se leen de StatResource, no de constantes
-5. `score`, `streak`, `combo_time` pasan a RunManager
+1. ~~Crear `scenes/player/SnakeController.gd`~~ — ✅ Lógica de movimiento extraída
+2. ~~Crear `scenes/food/FoodSpawner.gd`~~ — ✅ Lógica de spawn de comida separada
+3. ~~Game.gd se reduce a conectar EventBus y delegar a los managers~~ — ⚠️ Delega a controllers pero aún tiene 284 líneas
+4. ~~Stats del jugador se leen de StatResource~~ — ❌ Pendiente: aún usa constantes hardcodeadas
+5. ~~`score`, `streak`, `combo_time` pasan a RunManager~~ — ✅ Datos en RunManager
 
 ---
 
 ## Criterios de aceptación
 
-- [ ] El juego se ve y siente idéntico al original
-- [ ] `Game.gd` se redujo significativamente (máximo 100 líneas)
-- [ ] GameManager controla los estados correctamente
-- [ ] RunManager se reinicia al empezar nueva partida
-- [ ] Todas las estadísticas se leen de StatResource
-- [ ] DamageSystem calcula daño, cura y escudos sin errores
-- [ ] EventBus centraliza todas las señales — ningún script llama a otro directamente
-- [ ] No hay errores en editor ni runtime
-- [ ] `reset_game()` y `end_game()` funcionan mediante EventBus
+- [x] El juego se ve y siente idéntico al original
+- [x] GameManager controla los estados correctamente (MENU→PLAYING→GAME_OVER, con reset funcional)
+- [x] RunManager se reinicia al empezar nueva partida (`reset_run()` reinicia score, streak, combo, stats)
+- [x] DamageSystem calcula daño, cura y escudos sin errores
+- [x] No hay errores en editor ni runtime (0 errores verificados)
+- [x] `end_game()` funciona mediante EventBus (`event_bus.game_over.emit()` + `game_manager.end_run()`)
+- [ ] `Game.gd` reducido a máximo 100 líneas — **actual: 284 líneas** (pendiente en Fase 2: extraer HUD, streak visuals, effects a módulos separados)
+- [ ] Todas las estadísticas se leen de StatResource — **pendiente**: `BASE_MOVE_INTERVAL`, `STREAK_SPEED_BOOST`, `COMBO_MAX_TIME` aún hardcodeadas en Game.gd
+- [ ] EventBus centraliza *todas* las señales — **parcial**: Game.gd llama directamente a `snake_controller` y `food_spawner` (aceptable como coordinator, pero idealmente señales via EventBus)
+- [ ] `reset_game()` funciona mediante EventBus — **funciona por input directo** (Enter→`_process`→`reset_game()`), no emite señal EventBus
+
+### Pendiente para cerrar Fase 1
+
+1. **Reducir Game.gd a ≤100 líneas**: extraer HUD updates, streak visuals, effects, shader params a módulos separados
+2. **Wiring de StatResource**: leer `move_interval`, `streak_mult` etc. desde `run_manager.run_data.stats` en vez de constantes
+3. **reset_game() via señal**: `EventBus.reset_requested` → `_on_reset_requested()` → `reset_game()`
 
 ---
 
