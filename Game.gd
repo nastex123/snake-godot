@@ -48,6 +48,8 @@ func _ready() -> void:
 	game_area.add_child(snake_controller)
 
 	var head_visual = preload("res://SnakeHead.gd").new()
+	head_visual.position = Vector2(12, 12)
+	snake_head.add_child(head_visual)
 	snake_controller.set_head_visual(head_visual)
 
 	food_spawner = FoodSpawner.new()
@@ -63,7 +65,6 @@ func _ready() -> void:
 	snake_controller.hit_self.connect(_on_snake_hit)
 
 	_setup_retro_font()
-	game_manager.start_run()
 	reset_game()
 
 func _process(delta: float) -> void:
@@ -199,8 +200,8 @@ static func get_streak_color(s: int) -> Color:
 		_: return Color(1, 0, 0, 1)
 
 func update_body() -> void:
-	for part in body_parts:
-		part.queue_free()
+	for c in snake_body.get_children():
+		c.queue_free()
 	body_parts.clear()
 
 	for i in range(1, snake_controller.snake.size()):
@@ -258,6 +259,7 @@ func _on_game_started() -> void:
 
 func reset_game() -> void:
 	run_manager.reset_run()
+	game_manager.current_state = game_manager.State.PLAYING
 	snake_controller.reset(Vector2i(15, 9), Vector2i.RIGHT)
 	move_interval = BASE_MOVE_INTERVAL
 	move_timer = 0.0

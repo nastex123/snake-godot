@@ -20,9 +20,19 @@ Retro arcade Snake transformado en un **roguelite de acción** con salas procedu
 
 ## Estado actual
 
-Implementando **Fase 1** — migrando la arquitectura monolítica (`Game.gd`) a un sistema modular con autoloads, EventBus, sistema de daño, RunData y estado.
+Implementando **Fase 1** — arquitectura modular completa con autoloads, EventBus, sistema de daño, RunData y máquina de estados.
 
-### Gameplay base (heredado)
+### Fase 1 completada
+
+- Autoloads: `GameManager`, `RunManager`, `EventBus`
+- `SnakeController.gd` — movimiento, input, colisiones
+- `FoodSpawner.gd` — spawn en celdas libres
+- `Game.gd` refactorizado (~284 líneas) delegando a controladores
+- `DamageSystem.gd` — cálculo de daño, cura, escudos, invulnerabilidad
+- Game over + restart funcional (Enter reinicia)
+- `best_score` persistente entre runs
+
+### Gameplay base
 
 - Tablero 30×18 tiles — 720×432px
 - Movimiento grid-based clásico de Snake
@@ -30,7 +40,7 @@ Implementando **Fase 1** — migrando la arquitectura monolítica (`Game.gd`) a 
 - Velocidad: `max(0.06, 0.15 - streak * 0.008)` — se acelera con cada comida
 - Puntuación: cada comida suma `streak` puntos
 
-### Visuales (base)
+### Visuales
 
 - Font **Press Start 2P** con contorno negro vía `LabelSettings`
 - `LetterWaveText.gd`: texto con animación sine-wave por carácter (`@tool` + `_show_preview()`)

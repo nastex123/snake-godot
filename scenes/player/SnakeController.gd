@@ -22,8 +22,6 @@ func setup(start_pos: Vector2i, start_dir: Vector2i) -> void:
 
 func set_head_visual(visual: Node) -> void:
 	head_visual = visual
-	head_visual.position = Vector2(TILE_SIZE / 2.0, TILE_SIZE / 2.0)
-	add_child(head_visual)
 
 func handle_input(dir: Vector2i) -> void:
 	if dir != Vector2i.ZERO and dir != -direction:

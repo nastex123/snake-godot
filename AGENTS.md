@@ -5,7 +5,7 @@
 | Path | Role |
 |------|------|
 | `Game.tscn` | Main scene, root entrypoint |
-| `Game.gd` | Reduced to ~270 lines — connects EventBus, delegates to SnakeController/FoodSpawner |
+| `Game.gd` | ~284 lines — connects EventBus, delegates to SnakeController/FoodSpawner |
 | `GameArea` (Node2D at y=56) | Contains grid, food, snake, scanner — 720×432 local coords |
 | `TopBar` (ColorRect, y=0-56) | HUD background above game area |
 | `autoload/GameManager.gd` | State machine (Autoload) |
@@ -76,6 +76,9 @@
 - [x] `end_game()` no emite `EventBus.game_over` — arreglar flujo
 - [x] Verificar que el juego compile y corra sin errores en Godot
 - [x] Commit y push de Fase 1 en rama `fase_01`
+- [x] Stack overflow por recursión infinita: `reset_game()` → `start_run()` → `game_started` → `_on_game_started()` → `reset_game()` — corregido设置 `current_state = PLAYING` directamente sin `start_run()`
+- [x] Body accumulation: `update_body()` ahora itera `snake_body.get_children()` para limpiar todos los hijos
+- [x] Game over + restart funciona correctamente (Enter → `reset_game()` → estado PLAYING)
 
 ### Documentación
 - `Documentacion/GDD.md` — Game Design Document v2.0
