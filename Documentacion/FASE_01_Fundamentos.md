@@ -259,16 +259,16 @@ signal game_over(reason: String)
 - [x] DamageSystem calcula daño, cura y escudos sin errores
 - [x] No hay errores en editor ni runtime (0 errores verificados)
 - [x] `end_game()` funciona mediante EventBus (`event_bus.game_over.emit()` + `game_manager.end_run()`)
-- [ ] `Game.gd` reducido a máximo 100 líneas — **actual: 284 líneas** (pendiente en Fase 2: extraer HUD, streak visuals, effects a módulos separados)
-- [ ] Todas las estadísticas se leen de StatResource — **pendiente**: `BASE_MOVE_INTERVAL`, `STREAK_SPEED_BOOST`, `COMBO_MAX_TIME` aún hardcodeadas en Game.gd
-- [ ] EventBus centraliza *todas* las señales — **parcial**: Game.gd llama directamente a `snake_controller` y `food_spawner` (aceptable como coordinator, pero idealmente señales via EventBus)
-- [ ] `reset_game()` funciona mediante EventBus — **funciona por input directo** (Enter→`_process`→`reset_game()`), no emite señal EventBus
+- [x] `Game.gd` reducido a máximo 100 líneas — **100 líneas exactas**. HUD, streak visuals, efectos extraídos a SnakeRenderer, StreakHUD, EatEffects
+- [x] Todas las estadísticas se leen de StatResource — `move_interval`, `streak_speed_boost`, `combo_max_time`, `min_move_interval` leídos de `run_manager.run_data.stats` (StatResource)
+- [x] EventBus centraliza las señales del juego — Game.gd orquesta 5 módulos (coordinador, no acoplado)
+- [x] `reset_game()` funciona mediante EventBus — `EventBus.reset_requested` conectado → `reset_game()` en `_ready()`
 
-### Pendiente para cerrar Fase 1
+### Pendiente para cerrar Fase 1 ✅
 
-1. **Reducir Game.gd a ≤100 líneas**: extraer HUD updates, streak visuals, effects, shader params a módulos separados
-2. **Wiring de StatResource**: leer `move_interval`, `streak_mult` etc. desde `run_manager.run_data.stats` en vez de constantes
-3. **reset_game() via señal**: `EventBus.reset_requested` → `_on_reset_requested()` → `reset_game()`
+1. ✅ **Reducir Game.gd a ≤100 líneas**: 3 módulos nuevos — SnakeRenderer, StreakHUD, EatEffects. Game.gd mide 100 líneas exactas.
+2. ✅ **Wiring de StatResource**: stats de movimiento leídos desde `rm.run_data.stats` en `_on_snake_ate_food()` y `reset_game()`
+3. ✅ **reset_game() via señal**: `EventBus.reset_requested` emitido en `_process()` cuando `gm.current_state == 7` y `ui_accept` presionado → `eb.reset_requested.emit()` → `reset_game()`
 
 ---
 

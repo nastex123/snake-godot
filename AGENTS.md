@@ -57,7 +57,7 @@
 - **Floating text**: Streak level popup at food position
 - **Game-over fade**: Halftone dots turn red via shader
 
-## Fase 1 — Estado actual
+## Fase 1 — Estado actual ✅
 
 ### Completado
 - [x] Estructura de carpetas (`autoload/`, `resources/`, `scripts/`, `scenes/player/`, `scenes/food/`, etc.)
@@ -68,22 +68,37 @@
 - [x] `EventBus.gd` — autoload con señales centralizadas
 - [x] `SnakeController.gd` — lógica de movimiento extraída de Game.gd
 - [x] `FoodSpawner.gd` — lógica de spawn de comida extraída de Game.gd
-- [x] `Game.gd` refactorizado (~274 líneas) usando SnakeController, FoodSpawner, autoloads
+- [x] `Game.gd` refactorizado (100 líneas) usando SnakeController, FoodSpawner, SnakeRenderer, StreakHUD, EatEffects
+- [x] `scenes/player/SnakeRenderer.gd` — render de body/head + growth flash
+- [x] `scenes/ui/StreakHUD.gd` — streak visuals, combo bar, game over UI, font setup
+- [x] `scenes/effects/EatEffects.gd` — explosion, floating text, shake, eat-wave shader
 - [x] Autoloads registrados en `project.godot`
+- [x] Game.gd reducido a 100 líneas exactas
+- [x] Stats de movimiento leídos de StatResource via RunManager
+- [x] `reset_game()` vía `EventBus.reset_requested`
 
-### Pendiente (bugs conocidos)
+### Bugs resueltos
 - [x] `best_score` se resetea entre runs — mover a Game.gd como variable persistente
 - [x] `end_game()` no emite `EventBus.game_over` — arreglar flujo
-- [x] Verificar que el juego compile y corra sin errores en Godot
-- [x] Commit y push de Fase 1 en rama `fase_01`
-- [x] Stack overflow por recursión infinita: `reset_game()` → `start_run()` → `game_started` → `_on_game_started()` → `reset_game()` — corregido设置 `current_state = PLAYING` directamente sin `start_run()`
-- [x] Body accumulation: `update_body()` ahora itera `snake_body.get_children()` para limpiar todos los hijos
-- [x] Game over + restart funciona correctamente (Enter → `reset_game()` → estado PLAYING)
+- [x] Compilación y runtime sin errores (Godot)
+- [x] Commit y push en rama `fase_01`
+- [x] Stack overflow por recursión infinita: `reset_game()` → `start_run()` → `game_started` → `_on_game_started()` → `reset_game()`
+- [x] Body accumulation: `update_body()` itera `snake_body.get_children()` para limpiar
+- [x] Game over + restart funciona correctamente
+- [x] Parse error: scripts sin `class_name` → agregados a SnakeRenderer, StreakHUD, EatEffects
+- [x] LetterWaveText (extends Control) no tiene `label_settings` → excluido del loop de font
+
+### Validación funcional (verificada runtime)
+- [x] Movimiento básico (RIGHT por defecto, 6 tiles en 1s)
+- [x] Cambio de dirección vía input (`ui_down`, `ui_left`, `ui_up`)
+- [x] Comer comida → score +1, streak +1, snake_len +1
+- [x] Game over por colisión (pared derecha)
+- [x] Restart con Enter (ui_accept) → estado PLAYING, score 0, snake reset
 
 ### Documentación
 - `Documentacion/GDD.md` — Game Design Document v2.0
 - `Documentacion/ROADMAP.md` — 9 fases de desarrollo
-- `Documentacion/FASE_01_Fundamentos.md` — diseño de Fase 1
+- `Documentacion/FASE_01_Fundamentos.md` — diseño de Fase 1 (completado ✅)
 - `Documentacion/FASE_02_HUD.md` a `FASE_09_Pulido.md` — fases restantes
 
 ## How to test

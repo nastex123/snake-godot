@@ -36,7 +36,11 @@ func _base_stats() -> Dictionary:
 		"shield": 0, "armor": 0,
 		"speed": 1.0, "pickup_radius": 1.0,
 		"luck": 1.0, "xp_mult": 1.0, "gold_mult": 1.0,
-		"streak_mult": 1.0
+		"streak_mult": 1.0,
+		"base_move_interval": 0.15,
+		"min_move_interval": 0.06,
+		"combo_max_time": 3.0,
+		"streak_speed_boost": 0.008,
 	}
 
 func add_score(amount: int) -> void:

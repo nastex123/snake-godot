@@ -9,6 +9,11 @@
 [ext_resource type="Script" uid="uid://b8jvxho013s4m" path="res://AudioManager.gd" id="8_gd"]
 [ext_resource type="Script" uid="uid://bi51jx5ih12n8" path="res://LetterWaveText.gd" id="9_gd"]
 [ext_resource type="Shader" uid="uid://s0c22yy5egum" path="res://grid_background.gdshader" id="10_sh"]
+[ext_resource type="Script" uid="uid://ctxwdxmev6kn0" path="res://scenes/player/SnakeRenderer.gd" id="11_gd"]
+[ext_resource type="Script" uid="uid://dkhhiauijx1xn" path="res://scenes/ui/StreakHUD.gd" id="12_gd"]
+[ext_resource type="Script" uid="uid://h50f2a04mwjx" path="res://scenes/effects/EatEffects.gd" id="13_gd"]
+[ext_resource type="Script" uid="uid://b7s2fbcca2ihg" path="res://scenes/player/SnakeController.gd" id="14_gd"]
+[ext_resource type="Script" uid="uid://cp32cyfpfscxr" path="res://scenes/food/FoodSpawner.gd" id="15_gd"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_48a72"]
 shader = ExtResource("10_sh")
@@ -68,6 +73,18 @@ shape = SubResource("RectangleShape2D_s6t5r")
 shape = SubResource("RectangleShape2D_7s4h3")
 
 [node name="SnakeBody" type="Node2D" parent="GameArea" unique_id=62260600]
+
+[node name="SnakeController" type="Node2D" parent="GameArea" unique_id=998011914]
+script = ExtResource("14_gd")
+
+[node name="FoodSpawner" type="Node2D" parent="GameArea" unique_id=1246605487]
+script = ExtResource("15_gd")
+
+[node name="SnakeRenderer" type="Node2D" parent="GameArea" unique_id=1944446260]
+script = ExtResource("11_gd")
+
+[node name="EatEffects" type="Node" parent="GameArea" unique_id=858911808]
+script = ExtResource("13_gd")
 
 [node name="BorderScanner" type="Node2D" parent="GameArea" unique_id=2085190682]
 z_index = 3
@@ -228,3 +245,6 @@ offset_bottom = 44.0
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 theme_override_font_sizes/font_size = 14
 text = "PRESS SPACE"
+
+[node name="StreakHUD" type="Node" parent="." unique_id=1667095330]
+script = ExtResource("12_gd")
