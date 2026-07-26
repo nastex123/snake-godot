@@ -5,7 +5,7 @@ const TILE_SIZE := 24
 @onready var snake_controller: SnakeController = $GameArea/SnakeController
 @onready var food_spawner: FoodSpawner = $GameArea/FoodSpawner
 @onready var snake_renderer: SnakeRenderer = $GameArea/SnakeRenderer
-@onready var streak_hud: StreakHUD = $StreakHUD
+@onready var hud: HUD = $HUD
 @onready var eat_effects: EatEffects = $GameArea/EatEffects
 @onready var eb = get_node("/root/EventBus")
 @onready var gm = get_node("/root/GameManager")
@@ -15,8 +15,8 @@ var move_interval := 0.15
 func _ready() -> void:
 	food_spawner.setup($GameArea/Food)
 	snake_renderer.setup(snake_head, snake_body, snake_controller)
-	streak_hud.setup(rm, food_spawner)
-	streak_hud.setup_font()
+	hud.setup(rm, food_spawner)
+	hud.setup_font()
 	eb.game_over.connect(_on_game_over)
 	eb.reset_requested.connect(reset_game)
 	snake_controller.ate_food.connect(_on_snake_ate_food)
@@ -55,9 +55,17 @@ func _on_snake_ate_food(pos: Vector2i) -> void:
 	eb.food_eaten.emit(pos, streak_val)
 	rm.add_score(streak_val)
 	move_interval = max(s.min_move_interval, s.base_move_interval - streak_val * s.streak_speed_boost)
-	streak_hud.update_streak(streak_val)
-	streak_hud.animate_streak()
-	streak_hud.update_score(rm.run_data.score)
+	hud.update_streak(streak_val)
+	hud.animate_streak()
+	hud.update_score(rm.run_data.score)
+	rm.add_gold(streak_val)
+	hud.update_gold(rm.run_data.gold)
+	hud.notify_gold(streak_val)
+	rm.add_xp(streak_val)
+	hud.set_xp(rm.run_data.xp, rm.run_data.level * 50)
+	hud.notify_xp(streak_val)
+	hud.update_level(rm.run_data.level)
+	hud.notify_streak(streak_val)
 	eat_effects.play(pos, streak_val)
 	food_spawner.spawn(snake_controller.snake)
 	snake_renderer.trigger_growth_flash()
@@ -70,9 +78,9 @@ func _update_combo(delta: float) -> void:
 		combo -= delta
 		if combo <= 0:
 			rm.set_streak(0)
-			streak_hud.update_streak(0)
+			hud.update_streak(0)
 	rm.set_combo_time(combo)
-	streak_hud.update_combo_bar(combo)
+	hud.update_combo_bar(combo)
 
 func reset_game() -> void:
 	rm.reset_run()
@@ -82,9 +90,13 @@ func reset_game() -> void:
 	move_timer = 0.0
 	rm.run_data.wave_time = 0.0
 	rm.run_data.wave_flash = 0.0
-	streak_hud.hide_game_over()
-	streak_hud.update_score(0)
-	streak_hud.reset_visuals()
+	hud.hide_game_over()
+	hud.update_score(0)
+	hud.update_gold(0)
+	hud.update_level(1)
+	hud.set_hp(rm.run_data.stats.hp, rm.run_data.stats.hp_max)
+	hud.set_xp(0, rm.run_data.level * 50)
+	hud.reset_visuals()
 	snake_renderer.update_body(snake_controller.snake)
 	food_spawner.spawn(snake_controller.snake)
 
@@ -94,7 +106,7 @@ func end_game() -> void:
 
 func _on_game_over(_reason: String) -> void:
 	rm.set_streak(0)
-	streak_hud.update_streak(0)
-	streak_hud.show_game_over(rm.run_data.score)
-	var tw := create_tween()
-	tw.tween_method(streak_hud.set_game_over_fade, 0.0, 0.8, 0.5).set_ease(Tween.EASE_IN)
+	hud.update_streak(0)
+	hud.show_game_over(rm.run_data.score)
+	var tw: Tween = create_tween()
+	tw.tween_method(hud.set_game_over_fade, 0.0, 0.8, 0.5).set_ease(Tween.EASE_IN)

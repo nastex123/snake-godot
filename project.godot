@@ -26,7 +26,7 @@ EventBus="res://autoload/EventBus.gd"
 [display]
 
 window/size/viewport_width=720
-window/size/viewport_height=488
+window/size/viewport_height=508
 window/stretch/mode="viewport"
 window/dpi/allow_hidpi=false
 

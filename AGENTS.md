@@ -5,9 +5,9 @@
 | Path | Role |
 |------|------|
 | `Game.tscn` | Main scene, root entrypoint |
-| `Game.gd` | ~284 lines — connects EventBus, delegates to SnakeController/FoodSpawner |
-| `GameArea` (Node2D at y=56) | Contains grid, food, snake, scanner — 720×432 local coords |
-| `TopBar` (ColorRect, y=0-56) | HUD background above game area |
+| `Game.gd` | ~109 lines — connects EventBus, delegates to SnakeController/FoodSpawner |
+| `GameArea` (Node2D at y=76) | Contains grid, food, snake, scanner — 720×432 local coords |
+| `TopBar` (ColorRect, y=0-76) | HUD background above game area |
 | `autoload/GameManager.gd` | State machine (Autoload) |
 | `autoload/RunManager.gd` | Run data: score, streak, gold, xp, level, stats (Autoload) |
 | `autoload/EventBus.gd` | Centralized signals between systems (Autoload) |
@@ -23,7 +23,12 @@
 | `grid_background.gdshader` | Dynamic background shader: halftone squares, breathing, eat wave, game-over red fade |
 | `ExplosionEffect.gd` | Retro-comic particle burst on eat, shapes scale by streak level |
 | `ScreenShake.gd` | Camera shake on eat |
-| `FloatingText.gd` | Animated "STREAK xN" text on eat |
+| `scenes/ui/HUD.tscn` | HUD scene (CanvasLayer), instanced from Game.tscn |
+| `scenes/ui/HUD.gd` | HUD script — score, gold, level, streak, combo, HP/XP bars, notifications |
+| `scenes/ui/HPBar.gd` | HP bar with delay animation |
+| `scenes/ui/XPBar.gd` | XP bar with level-up flash |
+| `scenes/ui/NotificationSystem.gd` | Pooled notification labels (fade in/out, stacking) |
+| `FloatingText.gd` | Animated "STREAK xN" text at food position |
 | `AudioManager.gd` | Sound effects |
 | `GameOverFade` | Shader uniform `game_over_fade` — dots turn red |
 
@@ -99,7 +104,8 @@
 - `Documentacion/GDD.md` — Game Design Document v2.0
 - `Documentacion/ROADMAP.md` — 9 fases de desarrollo
 - `Documentacion/FASE_01_Fundamentos.md` — diseño de Fase 1 (completado ✅)
-- `Documentacion/FASE_02_HUD.md` a `FASE_09_Pulido.md` — fases restantes
+- `Documentacion/FASE_02_HUD.md` — diseño de Fase 2 (en progreso)
+- `Documentacion/FASE_03_Pulido.md` a `FASE_09_Pulido.md` — fases restantes
 
 ## How to test
 
@@ -116,3 +122,22 @@
 - Edit `Game.tscn` or `project.godot` on disk → `godot_editor_edit restart save=true` (editor re-reads project settings)
 - `godot_editor_read get_log_messages severity=error` after every mutation
 - Z-order: GridBackground(-1) → GridBorder(1) → Food(2) → BorderScanner(3) → HUD(CanvasLayer)
+
+## Fase 2 — HUD (en progreso)
+
+### Completado
+- [x] HUD.tscn como escena independiente (CanvasLayer)
+- [x] HPBar.gd con delay animation
+- [x] XPBar.gd con level-up flash
+- [x] Font PressStart2P visible en editor (theme_override_fonts)
+- [x] NotificationSystem.gd — pooling de 8 labels, fade in/out, stacking vertical
+- [x] Notificaciones: +XP (cyan), +Gold (yellow), Streak (streak_color)
+- [x] Viewport ajustado a 720×508 (TopBar extendido 56→76px)
+- [x] Labels convertidos de LetterWaveText a Label puro (visible en editor)
+
+### Pendiente (requieren dependencias)
+- [ ] SkillSlot (cooldown radial) — requiere Fase 5
+- [ ] RelicSlot (icono + rareza) — requiere Fase 5
+- [ ] StatusIcon (buff/debuff) — requiere Fase 4/5
+- [ ] BossHUD — requiere Fase 7
+- [ ] Minimap — requiere Fase 3

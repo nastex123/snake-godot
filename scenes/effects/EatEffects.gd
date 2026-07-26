@@ -15,12 +15,12 @@ func play(pos: Vector2, streak: int) -> void:
 	screen_shake_cam.shake((streak - 1) * 0.8 + 0.5)
 
 	var ft := floating_text_scene.new()
-	ft.play(pos, StreakHUD.get_streak_color(streak), streak)
+	ft.play(pos, HUD.get_streak_color(streak), streak)
 	game_area.add_child(ft)
 
 	var exp := preload("res://ExplosionEffect.gd").new()
 	game_area.add_child(exp)
-	exp.play(pos, StreakHUD.get_streak_color(streak), streak)
+	exp.play(pos, HUD.get_streak_color(streak), streak)
 
 	trigger_wave(pos, streak)
 
