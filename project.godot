@@ -22,6 +22,7 @@ MCPGameBridge="res://addons/godot_mcp/game_bridge/mcp_game_bridge.gd"
 GameManager="res://autoload/GameManager.gd"
 RunManager="res://autoload/RunManager.gd"
 EventBus="res://autoload/EventBus.gd"
+MapManager="res://autoload/MapManager.gd"
 
 [display]
 

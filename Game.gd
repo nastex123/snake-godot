@@ -7,9 +7,11 @@ const TILE_SIZE := 24
 @onready var snake_renderer: SnakeRenderer = $GameArea/SnakeRenderer
 @onready var hud: HUD = $HUD
 @onready var eat_effects: EatEffects = $GameArea/EatEffects
+@onready var door: Door = $GameArea/Door
 @onready var eb = get_node("/root/EventBus")
 @onready var gm = get_node("/root/GameManager")
 @onready var rm = get_node("/root/RunManager")
+@onready var mm = get_node("/root/MapManager")
 var move_timer := 0.0
 var move_interval := 0.15
 func _ready() -> void:
@@ -22,6 +24,7 @@ func _ready() -> void:
 	snake_controller.ate_food.connect(_on_snake_ate_food)
 	snake_controller.hit_wall.connect(_on_snake_hit)
 	snake_controller.hit_self.connect(_on_snake_hit)
+	snake_controller.reached_door.connect(_on_reached_door)
 	reset_game()
 func _process(delta: float) -> void:
 	if gm.current_state == 7:
@@ -67,10 +70,29 @@ func _on_snake_ate_food(pos: Vector2i) -> void:
 	hud.update_level(rm.run_data.level)
 	hud.notify_streak(streak_val)
 	eat_effects.play(pos, streak_val)
+	mm.mark_room_cleared()
+	door.set_open(true)
+	snake_controller.set_doors([Vector2i(29, 9)], true)
 	food_spawner.spawn(snake_controller.snake)
 	snake_renderer.trigger_growth_flash()
 
 func _on_snake_hit() -> void: end_game()
+
+func _on_reached_door() -> void:
+	if not mm.advance_room():
+		end_game()
+		return
+	enter_room()
+
+func enter_room() -> void:
+	var room = mm.get_current_room()
+	door.set_open(false)
+	snake_controller.reset(Vector2i(2, 9), Vector2i.RIGHT)
+	snake_controller.set_doors([Vector2i(29, 9)], false)
+	snake_renderer.update_body(snake_controller.snake)
+	food_spawner.spawn(snake_controller.snake)
+	move_interval = rm.run_data.stats.base_move_interval
+	move_timer = 0.0
 
 func _update_combo(delta: float) -> void:
 	var combo = rm.run_data.get("combo_time", 0.0)
@@ -84,12 +106,8 @@ func _update_combo(delta: float) -> void:
 
 func reset_game() -> void:
 	rm.reset_run()
+	mm.generate_map()
 	gm.current_state = gm.State.PLAYING
-	snake_controller.reset(Vector2i(15, 9), Vector2i.RIGHT)
-	move_interval = rm.run_data.stats.base_move_interval
-	move_timer = 0.0
-	rm.run_data.wave_time = 0.0
-	rm.run_data.wave_flash = 0.0
 	hud.hide_game_over()
 	hud.update_score(0)
 	hud.update_gold(0)
@@ -97,8 +115,7 @@ func reset_game() -> void:
 	hud.set_hp(rm.run_data.stats.hp, rm.run_data.stats.hp_max)
 	hud.set_xp(0, rm.run_data.level * 50)
 	hud.reset_visuals()
-	snake_renderer.update_body(snake_controller.snake)
-	food_spawner.spawn(snake_controller.snake)
+	enter_room()
 
 func end_game() -> void:
 	eb.game_over.emit("death")

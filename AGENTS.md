@@ -135,9 +135,31 @@
 - [x] Viewport ajustado a 720×508 (TopBar extendido 56→76px)
 - [x] Labels convertidos de LetterWaveText a Label puro (visible en editor)
 
+## Fase 3 — Sistema de Salas (completado ✅)
+
+### Completado
+- [x] `resources/RoomData.gd` — Resource con enum Type (NORMAL, ELITE, EVENT, REST, TREASURE, SHOP, BOSS)
+- [x] `autoload/MapManager.gd` — genera mapa de 7 salas (lineal), `advance_room()`, `mark_room_cleared()`
+- [x] `scenes/Door.gd` — puerta visual (rojo cerrada / verde abierta) en (29,9)
+- [x] `SnakeController.gd` — señal `reached_door`, `door_positions`/`doors_open`, `set_doors()`
+- [x] `Game.gd` — `enter_room()` con reset de snake + spawn comida, `_on_reached_door()` para transición
+- [x] Puerta se abre al comer primera comida (`mark_room_cleared()` + `door.set_open(true)`)
+- [x] Transición sala→sala funcional (verificada runtime: room 0 → 1)
+- [x] MapManager registrado como autoload en `project.godot`
+- [x] Door en `Game.tscn` (z_index=2)
+
+### Bugs resueltos
+- [x] `reset()` en SnakeController limpiaba `door_positions` → mover `set_doors` después de `reset` en `enter_room()`
+- [x] `var room := mm.get_current_room()` no infería tipo → cambiar a `var room = mm.get_current_room()`
+
+### Pendiente (futuras fases)
+- [ ] Branching: mostrar 2-3 opciones de puerta al finalizar sala
+- [ ] GameManager State UPGRADE/SHOP para salas especiales
+- [ ] Boss en sala BOSS (room 6)
+- [ ] Minimap — requiere Fase 3
+
 ### Pendiente (requieren dependencias)
 - [ ] SkillSlot (cooldown radial) — requiere Fase 5
 - [ ] RelicSlot (icono + rareza) — requiere Fase 5
 - [ ] StatusIcon (buff/debuff) — requiere Fase 4/5
 - [ ] BossHUD — requiere Fase 7
-- [ ] Minimap — requiere Fase 3
