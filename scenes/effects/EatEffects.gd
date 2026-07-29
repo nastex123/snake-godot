@@ -3,6 +3,9 @@ class_name EatEffects
 
 const WAVE_DURATION := 0.6
 
+var wave_time := 0.0
+var wave_flash := 0.0
+
 @onready var game_area: Node2D = get_node("/root/Game/GameArea")
 @onready var audio_manager: Node = get_node("/root/Game/AudioManager")
 @onready var screen_shake_cam = get_node("/root/Game/Camera2D")
@@ -25,18 +28,20 @@ func play(pos: Vector2, streak: int) -> void:
 	trigger_wave(pos, streak)
 
 func trigger_wave(pos: Vector2, streak: int) -> void:
-	bg_shader.material.set("shader_parameter/wave_time", WAVE_DURATION)
+	wave_time = WAVE_DURATION
+	bg_shader.material.set("shader_parameter/wave_time", wave_time)
 	bg_shader.material.set("shader_parameter/wave_center", Vector2(
 		float(pos.x) / 30.0, float(pos.y) / 18.0
 	))
 	if streak == 5:
-		bg_shader.material.set("shader_parameter/wave_flash", 0.15)
+		wave_flash = 0.15
+		bg_shader.material.set("shader_parameter/wave_flash", wave_flash)
 
-func update_wave(delta: float, run_data) -> void:
-	if run_data.get("wave_time", 0.0) > 0:
-		run_data.wave_time = max(0.0, run_data.wave_time - delta)
-		bg_shader.material.set("shader_parameter/wave_time", run_data.wave_time)
+func update_wave(delta: float, _run_data) -> void:
+	if wave_time > 0.0:
+		wave_time = max(0.0, wave_time - delta)
+		bg_shader.material.set("shader_parameter/wave_time", wave_time)
 
-	if run_data.get("wave_flash", 0.0) > 0:
-		run_data.wave_flash = max(0.0, run_data.wave_flash - delta)
-		bg_shader.material.set("shader_parameter/wave_flash", run_data.wave_flash)
+	if wave_flash > 0.0:
+		wave_flash = max(0.0, wave_flash - delta)
+		bg_shader.material.set("shader_parameter/wave_flash", wave_flash)

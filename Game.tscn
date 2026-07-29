@@ -11,8 +11,8 @@
 [ext_resource type="Script" uid="uid://h50f2a04mwjx" path="res://scenes/effects/EatEffects.gd" id="13_gd"]
 [ext_resource type="Script" uid="uid://b7s2fbcca2ihg" path="res://scenes/player/SnakeController.gd" id="14_gd"]
 [ext_resource type="Script" uid="uid://cp32cyfpfscxr" path="res://scenes/food/FoodSpawner.gd" id="15_gd"]
-[ext_resource type="Script" path="res://scenes/Door.gd" id="17_gd"]
-[ext_resource type="PackedScene" path="res://scenes/ui/HUD.tscn" id="16_pd"]
+[ext_resource type="PackedScene" uid="uid://xmne5te5egxl" path="res://scenes/ui/HUD.tscn" id="16_pd"]
+[ext_resource type="Script" uid="uid://rrlv3cwf0w1b" path="res://scenes/Door.gd" id="17_gd"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_48a72"]
 shader = ExtResource("10_sh")
@@ -93,7 +93,7 @@ script = ExtResource("5_gd")
 z_index = 1
 script = ExtResource("6_gd")
 
-[node name="Door" type="Node2D" parent="GameArea"]
+[node name="Door" type="Node2D" parent="GameArea" unique_id=1022127320]
 z_index = 2
 script = ExtResource("17_gd")
 

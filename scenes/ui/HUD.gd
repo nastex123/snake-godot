@@ -108,10 +108,10 @@ func set_game_over_fade(v: float) -> void:
 	bg_shader.material.set("shader_parameter/game_over_fade", v)
 
 func notify_xp(amount: int) -> void:
-	notification_system.notify("+" + str(amount) + " XP", Color(0.0, 0.9, 1.0))
+	notification_system.notify("+" + str(amount) + " XP", "*", Color(0.0, 0.9, 1.0))
 
 func notify_gold(amount: int) -> void:
-	notification_system.notify("+" + str(amount) + " GOLD", Color(1.0, 0.85, 0.0))
+	notification_system.notify("+" + str(amount) + " GOLD", "$", Color(1.0, 0.85, 0.0))
 
 func notify_streak(level: int) -> void:
-	notification_system.notify("STREAK x" + str(level), get_streak_color(level))
+	notification_system.notify("STREAK x" + str(level), ">", get_streak_color(level))
