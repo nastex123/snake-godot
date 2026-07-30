@@ -14,6 +14,14 @@ func setup(enemy_data, position: Vector2i) -> void:
 	global_position = Vector2(position) * 24 + Vector2(12, 12)
 	current_hp = data.max_hp
 	hp_changed.emit(current_hp, data.max_hp)
+	_add_visual()
+
+func _add_visual() -> void:
+	var rect = ColorRect.new()
+	rect.size = Vector2(20, 20)
+	rect.position = Vector2(-10, -10)
+	rect.color = data.color
+	add_child(rect)
 
 
 func take_damage(amount: float) -> void:
