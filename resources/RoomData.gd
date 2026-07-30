@@ -8,3 +8,4 @@ enum Type { NORMAL, ELITE, EVENT, REST, TREASURE, SHOP, BOSS }
 @export var is_cleared: bool = false
 @export var is_boss: bool = false
 @export var connections: Array[int] = []
+@export var enemy_spawns: Array[Dictionary] = []

@@ -97,6 +97,8 @@ script = ExtResource("6_gd")
 z_index = 2
 script = ExtResource("17_gd")
 
+[node name="EnemyContainer" type="Node2D" parent="GameArea" unique_id=374860925]
+
 [node name="AudioManager" type="Node" parent="." unique_id=482437364]
 script = ExtResource("8_gd")
 

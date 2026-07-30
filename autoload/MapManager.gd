@@ -23,7 +23,20 @@ func generate_map() -> void:
 		room.is_boss = types[i] == RoomData.Type.BOSS
 		if i < types.size() - 1:
 			room.connections = [i + 1]
+		room.enemy_spawns = _generate_spawns(types[i], i)
 		rooms.append(room)
+
+func _generate_spawns(type: RoomData.Type, _index: int) -> Array[Dictionary]:
+	var spawns: Array[Dictionary] = []
+	match type:
+		RoomData.Type.NORMAL:
+			var count = 2 if _index < 3 else 3
+			for j in count:
+				spawns.append({"x": 8 + j * 3, "y": 9, "type": "slime"})
+		RoomData.Type.BOSS:
+			for j in 4:
+				spawns.append({"x": 7 + j * 5, "y": 9, "type": "slime"})
+	return spawns
 
 func get_current_room() -> RoomData:
 	if current_room_index < rooms.size():

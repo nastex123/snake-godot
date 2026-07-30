@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://dslime01tp5"]
+[ext_resource type="Script" path="res://scenes/enemy/Slime.gd" id="1_b7c3d"]
+[sub_resource type="RectangleShape2D" id="1"]
+[node name="Slime" type="Area2D" node_paths=PackedStringArray()]
+script = ExtResource("1_b7c3d")
+z_index = 3
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")

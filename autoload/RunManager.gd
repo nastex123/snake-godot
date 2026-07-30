@@ -70,3 +70,9 @@ func set_streak(value: int) -> void:
 
 func set_combo_time(value: float) -> void:
 	run_data.combo_time = value
+
+func take_damage(amount: float) -> void:
+	var stats = run_data.stats
+	stats.hp = max(0.0, stats.hp - amount)
+	if stats.hp <= 0:
+		get_node("/root/EventBus").game_over.emit("death")
