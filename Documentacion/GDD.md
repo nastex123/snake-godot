@@ -526,7 +526,57 @@ Cada habilidad posee:
 
 ## Slime
 
-Lento.
+Enemigo base, gelatinoso y social. Daña solo por contacto (misma casilla que la
+cabeza). Su dificultad proviene de la **coordinación en grupo** y de la **fusión**,
+no de sus estadísticas individuales.
+
+Balance data-driven: todos sus parámetros (HP, daño, tiempos de hop, radio de
+aliados, umbrales de fusión, cooldowns) viven en la data del enemigo (EnemyData),
+nunca como números mágicos en la lógica.
+
+### Movimiento — Hop
+
+Se mueve a **saltos**, nunca en línea recta:
+
+1. **Cargar (windup)**: se aplasta y se hunde en su casilla; los ojos miran fijamente al jugador.
+2. **Salto**: se estira y se lanza en arco; puede saltar en **diagonal** para acortar distancia.
+3. **Aterrizar (land)**: squash elástico + partículas de «goo».
+4. **Pausa**: respiración suave entre saltos.
+
+Cada salto recalcula la dirección a partir del **árbol de decisión**.
+
+### Árbol de decisión (por grupo)
+
+Al iniciar cada salto, cada slime cuenta sus **aliados a ≤ 4 casillas**:
+
+- **[Solo]** → Persecución directa y agresiva: salto de 2 casillas apuntando al **camino** del jugador (intercepta su rumbo, no su posición actual).
+- **[1 aliado]** → **Pinza**: cada slime cierra el eje con menor hueco (perpendicular al otro), aproximándose por ejes distintos para **triangular** y recoger al jugador.
+- **[Manada 3+]** → **Mural**: se reparten **Perseguidor** (el más cercano hostiga) y **Corte-de-salida** (el resto se reubica a los flancos del jugador para cortar el escape y empujarlo hacia un borde/esquina).
+
+### Cooldown por golpe y encogimiento (anti-tedio)
+
+- Al golpear a un slime entra en una ventana de **~0.5 s sin recibir daño** (no se puede stun-lockear en cadena).
+- El golpe lo **encoge una talla** (Medium → Small): menos masa, y **pierde la elegibilidad para fusionar**.
+- Al alejarse el jugador, **recrece lentamente** hacia Medium, recuperando su capacidad de fusión. Recompensa rematar la manada a tiempo.
+
+### Fusión — Slime Grande (amenaza principal)
+
+Disparada por **tiempo de acoso**: cuando **2-3 slimes elegibles** (no encogidos, talla Medium) permanecen **adyacentes/acorralando al jugador** más de un umbral, dejan los roles y se **fusionan en un Slime Grande:
+
+- Talla **2×2** (ocupa varias casillas), colores más oscuro.
+- **HP y daño de contacto multiplicados** (suma de los integrantes + bono).
+- Interacción clave: **encoger a los miembros antes impide la fusión**; no rematar a tiempo = crear un Slime Grande.
+
+### Animaciones detalladas (squash & stretch procedural con tween)
+
+- **Ciclo de hop**: cargar (aplastar + mirar al jugador) → salt (estirar + arco) → aterrizar (squash + goo) → pausa (respirar ~±).
+- **Ritmo por rol**: Perseguidor con wind-up corto (agresivo), Corte-de-salida con «acecho» agachado; pausas con variola (`±20%`) para no sincronizar saldos.
+- **Daño/cooldown**: flash blanco en el golpe → **deflación** elástica a la talla menor con wobble de «recuperándose»; parpadeo ligero mientras no puede recibir daño.
+- **Re-inflar**: tween lento de crecimiento al alejarse el jugador con pequeños «sip» de aire.
+- **Fusión**: los integrantes elegibles semanalmente acortan sus hops y se deslizan hacia el objetivo → squash conjunto + shake → **inflado** del Slime Grande 2×2 con burst de partículas y anillo de impacto; idle lento y pesado.
+- **Muerte**: deflate elástico + splash de goo en el suelo + mancha que se desvanece.
+
+Toda la animación usa curvas elásticas (`TRANS_CUBIC`/`EASE_OUT`) con overshoot, coherente con los visuales `ColorRect` actuales (no requiere assets).
 
 ---
 

@@ -24,8 +24,10 @@ shader_parameter/wave_duration = 0.6
 shader_parameter/game_over_fade = 0.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s6t5r"]
+size = Vector2(24, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7s4h3"]
+size = Vector2(24, 24)
 
 [node name="Game" type="Node2D" unique_id=1325700460]
 script = ExtResource("1_gd")
@@ -62,13 +64,19 @@ script = ExtResource("3_gd")
 
 [node name="Food" type="Area2D" parent="GameArea" unique_id=2090121806]
 z_index = 2
+collision_layer = 4
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GameArea/Food" unique_id=1528295680]
+position = Vector2(12, 12)
 shape = SubResource("RectangleShape2D_s6t5r")
 
 [node name="SnakeHead" type="Area2D" parent="GameArea" unique_id=1066937757]
+collision_layer = 1
+collision_mask = 6
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GameArea/SnakeHead" unique_id=1344509503]
+position = Vector2(12, 12)
 shape = SubResource("RectangleShape2D_7s4h3")
 
 [node name="SnakeBody" type="Node2D" parent="GameArea" unique_id=62260600]

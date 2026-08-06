@@ -163,3 +163,48 @@
 - [ ] RelicSlot (icono + rareza) — requiere Fase 5
 - [ ] StatusIcon (buff/debuff) — requiere Fase 4/5
 - [ ] BossHUD — requiere Fase 7
+
+## Fase 4 — Enemigos (en progreso)
+
+### Completado
+- [x] `EnemyData.gd` — config data-driven (drops, tallas, hops, radios, umbrales, cooldowns)
+- [x] `Enemy.gd` base — footprint por `grid_size` (`occupies_cell`), cooldown de golpe,
+  señal `merged`, hook `_on_hit_started`, miembro `max_hp`
+- [x] `Slime.gd` mejorado — hops (máquina de fases cargar→saltar→aterrizar→pausa),
+  árbol de decisión por grupo: Solo / Pinza / Mural; cooldown de golpe + encoger
+  (Medium→Small) + recuperación; fusión en **Slime Grande 2×2** por tiempo de acoso
+- [x] `Game.gd` — colisión por `occupies_cell` (2×2), filtra drops no-enemigo,
+  conecta `merged` → decrementa `enemies_alive`
+- [x] Balance data-driven en `EnemyData.gd` (sin magic numbers)
+- [x] GDD: sección Slime completa; CHANGELOG y FASE_04 actualizados
+
+### Bugs resueltos (Slime)
+- [x] Daño asimétrico: el jugador recibía daño repetido durante el cooldown de golpe
+  sin que el slime recibiera nada → `take_damage` devuelve `bool` y `Game.gd` solo emite
+  `damage_taken` si aterrizó el golpe
+- [x] Slime «pasaba» por el jugador sin ser dañado: `grid_pos` se commitaba al despegar,
+  desincronizado del cuerpo visual → ahora se commitea al aterrizar (`_try_hop_cell`)
+- [x] Slime Grande 2×2 se salía del grid: el centroide de fusión no estaba clampeado →
+  `clampi` a `0..GRID_W-2`/`0..GRID_H-2` + sincronización de `global_position`
+- [x] Gotas de goo desplazadas: posicionadas en coordenadas locales (`to_local`)
+- [x] Sprite del slime se veía en el HUD al saltar (fila 0, arco del salto y Slime
+  Grande en reposo): `_clamp_visual_y()` mantiene el sprite dentro del grid.
+  Fix adicional: la fórmula original ignoraba el offset de GameArea (y=76) — bounds
+  corregidos con `GRID_TOP_Y = 76` para que el clamp funcione en coordenadas globales
+- [x] `_on_hit_started`: SMALL/MEDIUM mueren de 1 toque; solo el BIG aguanta golpes
+  múltiples. Spawn de enemigos clampeado a `0..29`×`0..17`
+- [x] El jugador «pasaba por encima» de un slime saltando sin dañarlo: `grid_pos` se
+  commitea al aterrizar, así que durante el JUMP la hitbox quedaba retenida en la
+  casilla de partida. Override de `occupies_cell` en `Slime.gd` que durante `Phase.JUMP`
+  marca todo el camino `grid_pos → _target_grid_pos` (inclusive).
+- [x] Colisión migrada a **física** (área continua en vez de celdas discretas):
+  `SnakeHead` layer 1/mask 6 + shape 24×24; `Enemy/CollisionShape2D` dinámico por
+  `grid_size` (layer 2); `Game._physics_process` usa `get_overlapping_areas()`.
+  Capas en `layer_names/2d_physics`. Resuelve el hueco de temporización del tick.
+
+### Pendiente (resto de la Fase 4)
+- [ ] Spider, Tower, Ghost, Worm, Elite
+- [ ] Projectile.gd + disparo de torre
+- [ ] Spawn multi-tipo desde RoomData/MapManager
+- [ ] `room_cleared` conexión EventBus
+- [ ] Probar los nuevos tipos en editor (vía godot-mcp)

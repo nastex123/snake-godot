@@ -46,6 +46,11 @@ func _process(delta: float) -> void:
 	_update_combo(delta)
 	eat_effects.update_wave(delta, rm.run_data)
 
+func _physics_process(_delta: float) -> void:
+	if gm.current_state == 7:
+		return
+	_check_enemy_collision()
+
 func handle_input() -> void:
 	var dir = Vector2i.ZERO
 	if Input.is_action_just_pressed("ui_up"): dir = Vector2i.UP
@@ -57,16 +62,19 @@ func handle_input() -> void:
 func move_snake() -> void:
 	if snake_controller.move(food_spawner.get_food_pos()):
 		snake_renderer.update_body(snake_controller.snake)
-		_check_enemy_collision()
+
+# Colisión por física: el motor rastrea la superposición continua entre la
+# hitbox de la cabeza y la del enemigo (que sigue al nodo/sprite en todo
+# momento, incluso durante el salto). `take_damage` tiene cooldown anti-spam.
 
 func _check_enemy_collision() -> void:
-	var head_pos = snake_controller.get_head_pos()
-	for enemy in enemy_container.get_children():
-		if not enemy.is_alive:
+	for area in snake_head.get_overlapping_areas():
+		if area.get("is_alive") == null:
 			continue
-		if enemy.grid_pos == head_pos:
-			enemy.take_damage(rm.run_data.stats.damage)
-			eb.damage_taken.emit(enemy.data.damage, enemy.data.enemy_id)
+		if not area.is_alive:
+			continue
+		if area.take_damage(rm.run_data.stats.damage):
+			eb.damage_taken.emit(area.data.damage, area.data.enemy_id)
 
 func _on_snake_ate_food(pos: Vector2i) -> void:
 	var s = rm.run_data.stats
@@ -119,7 +127,7 @@ func _spawn_enemies(room: RoomData) -> void:
 		child.queue_free()
 	enemies_alive = 0
 	for spawn in room.enemy_spawns:
-		var pos = Vector2i(spawn.x, spawn.y)
+		var pos = Vector2i(clampi(int(spawn.x), 0, 29), clampi(int(spawn.y), 0, 17))
 		var etype = spawn.get("type", "slime")
 		match etype:
 			"slime":
@@ -135,6 +143,7 @@ func _spawn_enemies(room: RoomData) -> void:
 				var slime = SlimeScene.instantiate()
 				slime.setup(data, pos)
 				slime.died.connect(_on_enemy_died)
+				slime.merged.connect(_on_enemy_merged)
 				enemy_container.add_child(slime)
 				enemies_alive += 1
 
@@ -144,6 +153,9 @@ func _on_enemy_died(_enemy) -> void:
 		mm.mark_room_cleared()
 		door.set_open(true)
 		snake_controller.set_doors([Vector2i(29, 9)], true)
+
+func _on_enemy_merged(_enemy) -> void:
+	enemies_alive -= 1
 
 func _on_enemy_killed(_type: String, _pos: Vector2, xp: int, gold: int) -> void:
 	rm.add_score(gold)

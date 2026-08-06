@@ -338,6 +338,26 @@ func spawn_enemies(room_data: RoomData) -> void:
 - [ ] Sala se limpia cuando todos los enemigos mueren
 - [ ] No hay errores de colisión o pathfinding
 
+### Slime (mejorado — completado ✅ 2026-08-05)
+
+A diferencia del MVP (persecución recta), el Slime ahora:
+
+- **Movimiento a saltos (hop)**: fases cargar→salto→aterrizar→pausa, salto 1-2 casillas
+  con diagonal, curvas elásticas y gotas de goo.
+- **Árbol de decisión por grupo** (aliados a ≤4 casillas): Solo (persecución directa,
+  intercepta el rumbo), Pinza (cierra el eje con menor hueco para triangular) y Mural
+  (Perseguidor + Corte-de-salida empujan hacia bordes).
+- **Cooldown por golpe + encogimiento**: ~0.5 s sin daño tras ser golpeado (anti
+  stun-lock); el golpe encoge Medium→Small (pierde elegibilidad de fusión) y
+  recupera tamaño al alejarse el jugador.
+- **Fusión → Slime Grande 2×2**: disparada por tiempo de acoso (2-3 elegibles
+  adyacentes); suma HP/daño; footprint 2×2 con `occupies_cell`; `merged` decrementa
+  contador de sala.
+- Balance data-driven en `EnemyData.gd` (hops, radios, umbrales, cooldowns, tallas)
+  — sin números mágicos.
+
+Ver `Documentacion/GDD.md` → `# Enemigos → ## Slime` para el diseño completo.
+
 ---
 
 ## Notas técnicas Godot
