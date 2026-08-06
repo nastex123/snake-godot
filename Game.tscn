@@ -2,13 +2,17 @@
 
 [ext_resource type="Script" uid="uid://bbc8lrtyfvkit" path="res://Game.gd" id="1_gd"]
 [ext_resource type="Script" uid="uid://bbh55wk6w4ch3" path="res://GridTexture.gd" id="3_gd"]
-[ext_resource type="Script" uid="uid://dxtqfeh1cy2rs" path="res://ComboTimer.gd" id="4_gd"]
 [ext_resource type="Script" uid="uid://di41lu3u7exma" path="res://BorderScanner.gd" id="5_gd"]
 [ext_resource type="Script" uid="uid://x0pabnngox6o" path="res://GridBorder.gd" id="6_gd"]
 [ext_resource type="Script" uid="uid://cf8ovtg7mv8ng" path="res://ScreenShake.gd" id="7_gd"]
 [ext_resource type="Script" uid="uid://b8jvxho013s4m" path="res://AudioManager.gd" id="8_gd"]
-[ext_resource type="Script" uid="uid://bi51jx5ih12n8" path="res://LetterWaveText.gd" id="9_gd"]
 [ext_resource type="Shader" uid="uid://s0c22yy5egum" path="res://grid_background.gdshader" id="10_sh"]
+[ext_resource type="Script" uid="uid://ctxwdxmev6kn0" path="res://scenes/player/SnakeRenderer.gd" id="11_gd"]
+[ext_resource type="Script" uid="uid://h50f2a04mwjx" path="res://scenes/effects/EatEffects.gd" id="13_gd"]
+[ext_resource type="Script" uid="uid://b7s2fbcca2ihg" path="res://scenes/player/SnakeController.gd" id="14_gd"]
+[ext_resource type="Script" uid="uid://cp32cyfpfscxr" path="res://scenes/food/FoodSpawner.gd" id="15_gd"]
+[ext_resource type="PackedScene" uid="uid://xmne5te5egxl" path="res://scenes/ui/HUD.tscn" id="16_pd"]
+[ext_resource type="Script" uid="uid://rrlv3cwf0w1b" path="res://scenes/Door.gd" id="17_gd"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_48a72"]
 shader = ExtResource("10_sh")
@@ -20,25 +24,27 @@ shader_parameter/wave_duration = 0.6
 shader_parameter/game_over_fade = 0.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s6t5r"]
+size = Vector2(24, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7s4h3"]
+size = Vector2(24, 24)
 
 [node name="Game" type="Node2D" unique_id=1325700460]
 script = ExtResource("1_gd")
 
 [node name="TopBar" type="ColorRect" parent="." unique_id=1511685653]
 offset_right = 720.0
-offset_bottom = 56.0
+offset_bottom = 76.0
 color = Color(0.03, 0.03, 0.035, 0.85)
 
 [node name="TopBarSeparator" type="ColorRect" parent="." unique_id=1482044407]
-offset_top = 56.0
+offset_top = 76.0
 offset_right = 720.0
-offset_bottom = 57.0
+offset_bottom = 77.0
 color = Color(0.3, 0.8, 1, 0.35)
 
 [node name="GameArea" type="Node2D" parent="." unique_id=213611702]
-position = Vector2(0, 56)
+position = Vector2(0, 76)
 
 [node name="GridBackgroundShader" type="ColorRect" parent="GameArea" unique_id=1659316080]
 z_index = -2
@@ -58,16 +64,34 @@ script = ExtResource("3_gd")
 
 [node name="Food" type="Area2D" parent="GameArea" unique_id=2090121806]
 z_index = 2
+collision_layer = 4
+collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GameArea/Food" unique_id=1528295680]
+position = Vector2(12, 12)
 shape = SubResource("RectangleShape2D_s6t5r")
 
 [node name="SnakeHead" type="Area2D" parent="GameArea" unique_id=1066937757]
+collision_layer = 1
+collision_mask = 6
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GameArea/SnakeHead" unique_id=1344509503]
+position = Vector2(12, 12)
 shape = SubResource("RectangleShape2D_7s4h3")
 
 [node name="SnakeBody" type="Node2D" parent="GameArea" unique_id=62260600]
+
+[node name="SnakeController" type="Node2D" parent="GameArea" unique_id=998011914]
+script = ExtResource("14_gd")
+
+[node name="FoodSpawner" type="Node2D" parent="GameArea" unique_id=1246605487]
+script = ExtResource("15_gd")
+
+[node name="SnakeRenderer" type="Node2D" parent="GameArea" unique_id=1944446260]
+script = ExtResource("11_gd")
+
+[node name="EatEffects" type="Node" parent="GameArea" unique_id=858911808]
+script = ExtResource("13_gd")
 
 [node name="BorderScanner" type="Node2D" parent="GameArea" unique_id=2085190682]
 z_index = 3
@@ -77,149 +101,16 @@ script = ExtResource("5_gd")
 z_index = 1
 script = ExtResource("6_gd")
 
+[node name="Door" type="Node2D" parent="GameArea" unique_id=1022127320]
+z_index = 2
+script = ExtResource("17_gd")
+
+[node name="EnemyContainer" type="Node2D" parent="GameArea" unique_id=374860925]
+
 [node name="AudioManager" type="Node" parent="." unique_id=482437364]
 script = ExtResource("8_gd")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=986250353]
 script = ExtResource("7_gd")
 
-[node name="HUD" type="CanvasLayer" parent="." unique_id=1248793892]
-
-[node name="LeftSection" type="Control" parent="HUD" unique_id=1140220514]
-layout_mode = 3
-anchors_preset = 0
-offset_left = 16.0
-offset_top = 6.0
-offset_right = 176.0
-offset_bottom = 50.0
-
-[node name="ScoreLabel" type="Control" parent="HUD/LeftSection" unique_id=1615716449]
-anchors_preset = 0
-script = ExtResource("9_gd")
-text = "SCORE"
-font_size = 12
-color = Color(0.3, 0.8, 1, 1)
-
-[node name="ScoreValue" type="Label" parent="HUD/LeftSection" unique_id=1595698420]
-layout_mode = 0
-offset_top = 14.0
-offset_right = 160.0
-offset_bottom = 44.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 28
-text = "000000"
-
-[node name="CenterSection" type="Control" parent="HUD" unique_id=950409159]
-layout_mode = 3
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -120.0
-offset_top = 6.0
-offset_right = 120.0
-offset_bottom = 50.0
-grow_horizontal = 2
-
-[node name="StreakLabel" type="Control" parent="HUD/CenterSection" unique_id=1526310238]
-anchors_preset = 0
-offset_left = 50.0
-offset_right = 50.0
-script = ExtResource("9_gd")
-text = "STREAK"
-font_size = 11
-
-[node name="StreakMultiplier" type="Label" parent="HUD/CenterSection" unique_id=2144311231]
-layout_mode = 0
-offset_left = 64.0
-offset_top = 2.0
-offset_right = 120.0
-offset_bottom = 28.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 28
-text = "x1"
-
-[node name="ComboTimer" type="Control" parent="HUD/CenterSection" unique_id=1856346661]
-anchors_preset = 0
-offset_left = 50.0
-offset_top = 30.0
-offset_right = 170.0
-offset_bottom = 42.0
-pivot_offset = Vector2(60, 6)
-script = ExtResource("4_gd")
-
-[node name="RightSection" type="Control" parent="HUD" unique_id=27850140]
-layout_mode = 3
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -176.0
-offset_top = 6.0
-offset_right = -16.0
-offset_bottom = 50.0
-grow_horizontal = 0
-
-[node name="HighScoreLabel" type="Control" parent="HUD/RightSection" unique_id=836096068]
-anchors_preset = 0
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -120.0
-offset_bottom = 14.0
-grow_horizontal = 0
-script = ExtResource("9_gd")
-text = "BEST"
-font_size = 10
-color = Color(0.3, 0.8, 1, 1)
-
-[node name="HighScoreValue" type="Label" parent="HUD/RightSection" unique_id=1817484719]
-layout_mode = 0
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -160.0
-offset_top = 14.0
-offset_bottom = 44.0
-grow_horizontal = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 28
-text = "000000"
-
-[node name="GameOverFrame" type="ColorRect" parent="HUD" unique_id=533386683]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -160.0
-offset_top = -80.0
-offset_right = 160.0
-offset_bottom = 80.0
-color = Color(0, 0, 0, 0.85)
-
-[node name="GameOverLabel" type="Control" parent="HUD/GameOverFrame" unique_id=876572075]
-anchors_preset = 0
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -120.0
-offset_top = -20.0
-offset_right = 120.0
-offset_bottom = 20.0
-script = ExtResource("9_gd")
-text = "GAME OVER"
-font_size = 20
-color = Color(1, 0.2, 0.2, 1)
-
-[node name="RestartLabel" type="Label" parent="HUD" unique_id=1646894695]
-visible = false
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = 20.0
-offset_right = 100.0
-offset_bottom = 44.0
-theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
-theme_override_font_sizes/font_size = 14
-text = "PRESS SPACE"
+[node name="HUD" parent="." unique_id=982439990 instance=ExtResource("16_pd")]

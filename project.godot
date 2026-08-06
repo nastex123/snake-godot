@@ -19,11 +19,15 @@ config/main_scene="res://Game.tscn"
 [autoload]
 
 MCPGameBridge="res://addons/godot_mcp/game_bridge/mcp_game_bridge.gd"
+GameManager="res://autoload/GameManager.gd"
+RunManager="res://autoload/RunManager.gd"
+EventBus="res://autoload/EventBus.gd"
+MapManager="res://autoload/MapManager.gd"
 
 [display]
 
 window/size/viewport_width=720
-window/size/viewport_height=488
+window/size/viewport_height=508
 window/stretch/mode="viewport"
 window/dpi/allow_hidpi=false
 
@@ -36,7 +40,13 @@ enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
 bind_mode=0
 custom_bind_ip=""
 port_override_enabled=false
-port_override=6550
+port_override=6554
+
+[layer_names]
+
+2d_physics/layer_1="snake"
+2d_physics/layer_2="enemies"
+2d_physics/layer_3="food"
 
 [physics]
 

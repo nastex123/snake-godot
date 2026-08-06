@@ -1,0 +1,296 @@
+[gd_scene format=3 uid="uid://xmne5te5egxl"]
+
+[ext_resource type="Script" uid="uid://dxtqfeh1cy2rs" path="res://ComboTimer.gd" id="2_gd"]
+[ext_resource type="Script" uid="uid://crmjvggxqj3fh" path="res://scenes/ui/HUD.gd" id="3_gd"]
+[ext_resource type="Script" uid="uid://cqpfnhv3mf1cy" path="res://scenes/ui/HPBar.gd" id="4_gd"]
+[ext_resource type="Script" uid="uid://hpw6pjpjf5t6" path="res://scenes/ui/XPBar.gd" id="5_gd"]
+[ext_resource type="FontFile" uid="uid://dbtpppp2khudq" path="res://fonts/PressStart2P-Regular.ttf" id="6_fo"]
+[ext_resource type="Script" path="res://scenes/ui/NotificationSystem.gd" id="7_gd"]
+
+[node name="HUD" type="CanvasLayer" unique_id=2128564991]
+script = ExtResource("3_gd")
+
+[node name="LeftSection" type="Control" parent="." unique_id=1222990842]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 16.0
+offset_top = 6.0
+offset_right = 176.0
+offset_bottom = 72.0
+
+[node name="ScoreLabel" type="Label" parent="LeftSection" unique_id=1180685984]
+layout_mode = 0
+offset_top = -2.0
+offset_right = 60.0
+offset_bottom = 10.0
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 12
+text = "SCORE"
+
+[node name="ScoreValue" type="Label" parent="LeftSection" unique_id=2067805832]
+layout_mode = 0
+offset_top = 12.0
+offset_right = 160.0
+offset_bottom = 32.0
+scale = Vector2(0.5, 0.5)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 28
+text = "000000"
+
+[node name="GoldLabel" type="Label" parent="LeftSection" unique_id=250725599]
+layout_mode = 0
+offset_top = 34.0
+offset_right = 50.0
+offset_bottom = 44.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 10
+text = "GOLD:"
+
+[node name="GoldValue" type="Label" parent="LeftSection" unique_id=283027433]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 34.0
+offset_right = 160.0
+offset_bottom = 44.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 10
+text = "000"
+
+[node name="HPLabel" type="Label" parent="LeftSection" unique_id=1926383151]
+layout_mode = 0
+offset_top = 50.0
+offset_right = 20.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0.8, 0.1, 0.1, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 10
+text = "HP"
+
+[node name="HPBar" type="ColorRect" parent="LeftSection" unique_id=107676169]
+layout_mode = 0
+offset_left = 26.0
+offset_top = 48.0
+offset_right = 160.0
+offset_bottom = 62.0
+color = Color(0.3, 0.05, 0.05, 0.8)
+script = ExtResource("4_gd")
+
+[node name="HPFill" type="ColorRect" parent="LeftSection/HPBar" unique_id=358288859]
+layout_mode = 0
+offset_right = 134.0
+offset_bottom = 14.0
+color = Color(0.9, 0.15, 0.15, 1)
+
+[node name="HPDelay" type="ColorRect" parent="LeftSection/HPBar" unique_id=1802520130]
+layout_mode = 0
+offset_right = 134.0
+offset_bottom = 14.0
+color = Color(0.6, 0.1, 0.1, 0.6)
+
+[node name="CenterSection" type="Control" parent="." unique_id=1344972399]
+layout_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 6.0
+offset_right = 120.0
+offset_bottom = 72.0
+grow_horizontal = 2
+
+[node name="StreakLabel" type="Label" parent="CenterSection" unique_id=1971990021]
+layout_mode = 0
+offset_left = 50.0
+offset_top = -1.0
+offset_right = 120.0
+offset_bottom = 10.0
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 11
+text = "STREAK"
+
+[node name="StreakMultiplier" type="Label" parent="CenterSection" unique_id=471847086]
+layout_mode = 0
+offset_left = 120.0
+offset_top = -6.0
+offset_right = 151.0
+offset_bottom = 10.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 14
+text = "x1"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="ComboTimer" type="Control" parent="CenterSection" unique_id=509882440]
+anchors_preset = 0
+offset_left = 50.0
+offset_top = 32.0
+offset_right = 170.0
+offset_bottom = 44.0
+pivot_offset = Vector2(60, 6)
+script = ExtResource("2_gd")
+
+[node name="RightSection" type="Control" parent="." unique_id=1167003448]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -176.0
+offset_top = 6.0
+offset_right = -16.0
+offset_bottom = 72.0
+grow_horizontal = 0
+
+[node name="HighScoreLabel" type="Label" parent="RightSection" unique_id=2089398782]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -48.0
+offset_top = 2.0
+offset_right = -8.0
+offset_bottom = 12.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 10
+text = "BEST"
+
+[node name="HighScoreValue" type="Label" parent="RightSection" unique_id=410724008]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -72.0
+offset_top = 18.0
+offset_right = 96.0
+offset_bottom = 46.0
+grow_horizontal = 0
+scale = Vector2(0.5, 0.5)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 28
+text = "000000"
+
+[node name="LevelLabel" type="Label" parent="RightSection" unique_id=344209495]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -46.0
+offset_top = 32.0
+offset_right = -16.0
+offset_bottom = 42.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 10
+text = "LV:"
+
+[node name="LevelValue" type="Label" parent="RightSection" unique_id=1432347868]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -12.0
+offset_top = 32.0
+offset_right = 8.0
+offset_bottom = 42.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 10
+text = "01"
+
+[node name="XPLabel" type="Label" parent="RightSection" unique_id=1134848610]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -140.0
+offset_top = 51.0
+offset_right = -120.0
+offset_bottom = 61.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0, 0.8, 1, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 10
+text = "XP"
+
+[node name="XPBar" type="ColorRect" parent="RightSection" unique_id=1804343257]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -114.0
+offset_top = 48.0
+offset_right = 8.0
+offset_bottom = 62.0
+grow_horizontal = 0
+color = Color(0, 0.1, 0.25, 0.8)
+script = ExtResource("5_gd")
+
+[node name="XPFill" type="ColorRect" parent="RightSection/XPBar" unique_id=25368224]
+layout_mode = 0
+offset_right = 122.0
+offset_bottom = 14.0
+color = Color(0, 0.9, 1, 1)
+
+[node name="GameOverFrame" type="ColorRect" parent="." unique_id=278078429]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -80.0
+offset_right = 160.0
+offset_bottom = 80.0
+color = Color(0, 0, 0, 0.85)
+
+[node name="GameOverLabel" type="Label" parent="GameOverFrame" unique_id=945288556]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = -20.0
+offset_right = 120.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.2, 0.2, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 20
+text = "GAME OVER"
+horizontal_alignment = 1
+
+[node name="RestartLabel" type="Label" parent="." unique_id=1351499661]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = 20.0
+offset_right = 100.0
+offset_bottom = 44.0
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_fonts/font = ExtResource("6_fo")
+theme_override_font_sizes/font_size = 14
+text = "PRESS SPACE"
+horizontal_alignment = 1
+
+[node name="NotificationContainer" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("7_gd")
