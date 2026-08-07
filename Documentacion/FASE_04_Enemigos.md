@@ -358,6 +358,40 @@ A diferencia del MVP (persecución recta), el Slime ahora:
 
 Ver `Documentacion/GDD.md` → `# Enemigos → ## Slime` para el diseño completo.
 
+### SlimePack — manada táctica (completado ✅ 2026-08-06)
+
+El árbol reactivo por conteo de aliados pasó a un **coordinador de manada** por sala:
+
+- **Nodo `SlimePack`** (uno por sala, en `EnemyContainer`): percepción compartida,
+  estados de manada, asignación de slots, roles, memoria y decisión de fusión.
+- **Estados**: `SEARCH` (sin contacto) → `REGROUP` (dispersos) → `WRAP` (2+ cerca) →
+  `PRESS` (pocas rutas de escape) → `FUSE` (presión + elegibles). Todos los miembros
+  leen el mismo estado, no deciden por separado.
+- **Pressure System**: la presión se calcula por **lados direccionales cubiertos**
+  alrededor del jugador (1 lado=1, 2=2.5, 3=4.5, 4=6), no por cantidad de slimes.
+  La fusión/agresividad dependen de la calidad del cerco.
+- **Slots reservados**: cada tick el pack asigna a cada vivo un slot radial único
+  alrededor del jugador (pool compartido → sin dos slimes al mismo destino; respeta
+  la regla de separación de `notas.md`). Si el pool se agota, el miembro cae a
+  persecución con dirección propia.
+- **Roles**: `persecutor` (frente), `shepherd` (empuja a pared), `anchor` (cierra la
+  retirada), `see` (corte). Asignados por posición del slot vs jugador + memoria.
+- **Memoria de sala**: `preferred_dir` / `last_escape`, con damping de
+  `pack_memory_time` — el grupo recuerda por dónde escapó el jugador y cierra ese lado.
+- **Fusión táctica**: la manada decide fusionar cuando presión ≥ `pack_pressure_fuse`
+  + ≥ `pack_fuse_min_members` MEDIUM elegibles + HP promedio > `pack_fuse_hp_ratio`
+  + pocos encogidos. Reemplaza al timer de acoso (`merge_harass_time`).
+- **Canalización interactiva**: los elegidos entran en `CHANNEL` (1s, vibración + aura,
+  dejan de perseguir). El jugador puede interrumpir golpeando (el pack cancela todo el
+  grupo), separándolos o encogiéndolos.
+- **Personalidad como pesos de decisión** (no stats): `impulsive`/`cautious`/`heavy`/
+  `light`/`social` con jitter determinista por posición — evita la sincronía visual.
+
+Balance data-driven en `EnemyData.gd` (`pack_*`), sin números mágicos. Estado scoped
+a la sala (se resetea al entrar en una nueva).
+
+Ver `Documentacion/CHANGELOG.md` (2026-08-06) para la validación headless.
+
 ---
 
 ## Notas técnicas Godot

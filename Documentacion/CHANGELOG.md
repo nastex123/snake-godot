@@ -112,6 +112,68 @@ footprint→detectado. Regresión headless 1200 frames sin errores.
 
 ---
 
+## 2026-08-06 — SlimePack: manada táctica con coordinación compartida (Fase 4)
+
+**Qué:** La IA del Slime deja de ser un árbol reactivo por conteo de aliados
+(Solo/Pinza/Mural por hop) y pasa a un coordinador de manada con percepción
+compartida, asignación de slots/roles, presión espacial, memoria de sala y fusión
+táctica interactiva. La dificultad emerge de la coordinación, no de inflar stats.
+
+**Por qué:** El comportamiento "correcto" pero predecible no era suficiente; cada
+slime decidía en cada salto según el número de aliados, generando oscilaciones y
+sin que la manada pareciera aprender del jugador.
+
+**Arquitectura (3 capas):**
+- `Slime.gd` = locomoción (hop) + animación + combate básico + rasgos de personalidad.
+- `SlimePack.gd` (nuevo) = percepción compartida + estados de manada + slots + roles
+  + memoria + decisión de fusión.
+- `Pressure System` (en SlimePack) = evaluación espacial continua del cerco.
+
+**Archivos tocados:**
+- `scenes/enemy/SlimePack.gd` (nuevo) + `SlimePack.tscn` (nuevo) — nodo coordinador
+  por sala: máquina `SEARCH → REGROUP → WRAP → PRESS → FUSE`, presión direccional
+  (1/2.5/4.5/6 por lados cubiertos), slots radiales alrededor del jugador con pool
+  único por tick (sin duplicados), roles (persecutor/shepherd/anchor/see), memoria
+  `preferred_dir`/`last_escape` (scoped a la sala, damping por `pack_memory_time`),
+  y fusión por canalización interrumpible.
+- `scenes/enemy/Slime.gd` — `_begin_jump()` delega el destino al pack
+  (`_pack_jump()`); rasgos de personalidad (impulsivo/cauteloso/pesado/ligero/social)
+  como pesos de decisión con jitter determinista; `begin_channel()`/`end_channel()`/
+  `_process_channel()` (vibra + aura, no persigue); `do_pack_merge()` para fusión
+  pack-driven; `_on_hit_started()` notifica al pack (interrupción).
+- `Game.gd` — `_spawn_enemies()` instancia un `SlimePack` por sala si hay slimes,
+  registra cada slime y lo enlaza.
+- `resources/EnemyData.gd` — bloque `pack_*` data-driven (presión wrap/press/fuse,
+  canalización, memoria, `pack_fuse_*`, personalidad).
+- `Documentacion/GDD.md` — sección Slime reescrita: IA de manada (SlimePack),
+  roles ampliados, presión espacial, memoria de sala, personalidad y fusión táctica
+  interrumpible.
+
+**Validación (tests headless):** pack registra 4 miembros; presión 6.0 con 4 lados
+cubiertos; 4 slimes → 0 slots duplicados con pool completo y fallback distinto por
+miembro cuando el pool se agota; canalización arranca/termina; golpe a un miembro
+interrumpe la canalización del grupo entero. Regresión Game.tscn 1200 frames sin
+errores.
+
+**Bug: slimes quedaban congelados tras la fusión (mismo día):** con 3+ slimes la
+presión alcanzaba `FUSE`, el pack canalizaba 2 elegidos y, al completarse el canal,
+`_finish_fusion()` llamaba `do_pack_merge(group)` cuyo guard usaba `can_merge()`
+(que exige `not _channeling`). Como el líder estaba **a propósito** canalizando, el
+guard devolvía `false` y salía sin limpiar `_channeling` ni llamar `end_channel` —
+el pack ya había reseteado su propio `_channeling` y vaciado `fuse_group`, así que
+nadie soltaba a esos slimes: se quedaban vibrando para siempre, sin moverse, y la
+sala no se podía limpiar. Fix:
+- `Slime.gd` — `do_pack_merge()` deja de usar `can_merge()` (la canalización es el
+  estado normal al completarse); gate propio (vivo/absorbido/lock/talla ≥2 miembros).
+- `SlimePack.gd` — `_finish_fusion()` suelta `end_channel()` a **todos** los miembros
+  del grupo antes de intentar la fusión, pase lo que pase con el líder.
+
+**Validación (bug):** test headless — 3 slimes, fusión natural: 0 congelados,
+1 Slime Grande formado, pack sin canalizar; tras golpe a un miembro: 0 congelados.
+Regresión Game.tscn 150 frames sin errores.
+
+---
+
 ## Fases previas
 
 - Fase 3: sistema de salas con transiciones y puerta (commit `b4b1b71`).

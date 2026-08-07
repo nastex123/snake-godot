@@ -15,6 +15,9 @@
 | `resources/StatResource.gd` | Reusable stat resource (Resource) |
 | `scenes/player/SnakeController.gd` | Snake movement, input, collision logic |
 | `scenes/food/FoodSpawner.gd` | Food spawn logic (free cells, random position) |
+| `scenes/enemy/Enemy.gd` | Enemy base (Area2D) — physics collision, take_damage, footprint |
+| `scenes/enemy/Slime.gd` | Hop locomotion, animation, combat, personality traits, pack interaction |
+| `scenes/enemy/SlimePack.gd` + `.tscn` | Per-room pack coordinator: states, unique slots, roles, memory, pressure, interactive fuse |
 | `ComboTimer.gd` | Rectangular two-layer timer bar (gray buffer, streak-colored fill) |
 | `GridTexture.gd` | Seamless 24×24 tile → tiled across 720×432 |
 | `GridBorder.gd` | 2px black outline around the grid |
@@ -173,6 +176,12 @@
 - [x] `Slime.gd` mejorado — hops (máquina de fases cargar→saltar→aterrizar→pausa),
   árbol de decisión por grupo: Solo / Pinza / Mural; cooldown de golpe + encoger
   (Medium→Small) + recuperación; fusión en **Slime Grande 2×2** por tiempo de acoso
+- [x] `SlimePack.gd` + `.tscn` — coordinador de manada por sala: estados de manada
+  (SEARCH→REGROUP→WRAP→PRESS→FUSE), percepción compartida, slots radiales únicos
+  por tick, roles, memoria scoped + pressure system, fusión por canalización
+  interrumpible (reemplaza el timer de acoso)
+- [x] `Slime.gd` (SlimePack) — `_begin_jump` delega el destino al pack; rasgos de
+  personalidad como pesos de decisión; `begin/end_channel` canalización; `do_pack_merge`
 - [x] `Game.gd` — colisión por `occupies_cell` (2×2), filtra drops no-enemigo,
   conecta `merged` → decrementa `enemies_alive`
 - [x] Balance data-driven en `EnemyData.gd` (sin magic numbers)

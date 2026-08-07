@@ -24,12 +24,42 @@ var _merge_cooldown := 0.0
 var _sc: Node
 var _eye_l: ColorRect
 var _eye_r: ColorRect
+var pack = null
+var traits := {}
+var _channeling := false
+var _aura: ColorRect
 
 func _ready() -> void:
 	_sc = get_node_or_null("/root/Game/GameArea/SnakeController")
 	hit_cooldown_time = data.hit_cooldown_time
+	_traits_from_data()
 	_apply_tier_visual()
 	_add_eyes()
+	_add_aura()
+
+func _traits_from_data() -> void:
+	# Personalidad = pesos de decisión (no stats). Jitter determinista por posición.
+	traits = data.personality.duplicate()
+	var h := hash(grid_pos.x * 1000 + grid_pos.y)
+	seeded_mix(["impulsive", "cautious", "heavy", "light", "social"], h)
+
+func seeded_mix(keys: Array, seed: int) -> void:
+	for k in keys:
+		var v: float = traits.get(k, 0.0)
+		var j := (float((seed + keys.find(k) * 137) % 100) - 50.0) / 100.0
+		traits[k] = clampf(v + j * 0.3, -1.0, 1.0)
+
+func trait_weight(key: String) -> float:
+	return traits.get(key, 0.0)
+
+func _add_aura() -> void:
+	_aura = ColorRect.new()
+	_aura.size = Vector2(56, 56)
+	_aura.position = Vector2(-28, -28)
+	_aura.pivot_offset = _aura.size * 0.5
+	_aura.color = Color(1, 0.9, 0.5, 0.0)
+	_aura.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	visual.add_child(_aura)
 
 func _add_eyes() -> void:
 	_eye_l = ColorRect.new()
@@ -42,14 +72,12 @@ func _add_eyes() -> void:
 	visual.add_child(_eye_r)
 
 func _process(delta: float) -> void:
-	if not is_alive or _absorbed:
+	if not is_alive or _absorbed or _channeling:
+		if _channeling:
+			_process_channel(delta)
 		return
 	_update_recovery(delta)
 	_update_harass(delta)
-	_merge_cooldown = maxf(0.0, _merge_cooldown - delta)
-	if _merge_cooldown <= 0.0:
-		_merge_cooldown = 0.25
-		_try_merge()
 	_advance_phase(delta)
 	_update_look()
 
@@ -146,6 +174,9 @@ func _breathe() -> void:
 	_set_squash(1.0 + s, 1.0 - s)
 
 func _begin_jump() -> void:
+	if pack != null:
+		_pack_jump()
+		return
 	var pp := _player_pos()
 	var allies := _allies_near()
 	var target: Vector2i
@@ -158,6 +189,20 @@ func _begin_jump() -> void:
 	else:
 		hop_direct = false
 		target = _mural_target(pp, allies)
+	_start_hop_to(target)
+
+func _pack_jump() -> void:
+	var goal: Dictionary = pack.goal_for(self)
+	hop_direct = goal.get("direct", false)
+	var target: Vector2i = goal["cell"]
+	# Rasgos ajustan solo el destino (pesos de decisión, no stats).
+	var t := traits
+	var nudge: float = t.get("heavy", 0.0)
+	if absf(nudge) > 0.05 and randf() < absf(nudge) * 0.3:
+		target = grid_pos
+	_start_hop_to(target)
+
+func _start_hop_to(target: Vector2i) -> void:
 	_move_towards(target)
 	_hop_from = global_position
 	_hop_to = Vector2(_target_grid_pos) * TILE + Vector2(TILE * 0.5, TILE * 0.5)
@@ -297,6 +342,63 @@ func _merge_group() -> Array:
 			group.append(child)
 	return group
 
+# ---------- coordinación con SlimePack (fusión interactiva) ----------
+
+func can_merge() -> bool:
+	return is_alive and not _absorbed and not _merge_lock \
+		and size_tier == SizeTier.MEDIUM and not _channeling
+
+func begin_channel() -> void:
+	if _channeling or not can_merge():
+		return
+	_channeling = true
+	phase = Phase.PAUSE
+	phase_time = 0.0
+	_tween_aura(true)
+
+func end_channel() -> void:
+	if not _channeling:
+		return
+	_channeling = false
+	_tween_aura(false)
+	_harass_time = 0.0
+	_merge_cooldown = 0.5
+
+func _process_channel(delta: float) -> void:
+	phase_time += delta
+	# Vibración + aura mientras canaliza; se queda quieto (no persigue).
+	var sh = sin(phase_time * 42.0) * 1.2
+	visual.position.x = -visual.size.x * 0.5 + sh
+	visual.position.y = -visual.size.y * 0.5 + cos(phase_time * 37.0) * 1.2
+	_clamp_visual_y()
+
+func _tween_aura(on_: bool) -> void:
+	if _aura == null:
+		return
+	var tw := create_tween()
+	if on_:
+		tw.tween_property(_aura, "color:a", 0.35, 0.2)
+	else:
+		tw.tween_property(_aura, "color:a", 0.0, 0.2)
+
+func do_pack_merge(group: Array) -> void:
+	if not is_alive or _absorbed or _merge_lock or size_tier != SizeTier.MEDIUM or group.size() < 2:
+		return
+	_channeling = false
+	_tween_aura(false)
+	var sorted := group.duplicate()
+	sorted.sort_custom(func(a, b):
+		return (a.grid_pos.x < b.grid_pos.x) or (a.grid_pos.x == b.grid_pos.x and a.grid_pos.y < b.grid_pos.y))
+	var leader = sorted[0]
+	for m in sorted:
+		if m != self and m != leader:
+			m._merge_lock = true
+			m._channeling = false
+	if self == leader:
+		_do_merge(sorted)
+	else:
+		_merge_lock = true
+
 func _do_merge(group: Array) -> void:
 	var total_hp := 0.0
 	var total_max := 0.0
@@ -364,6 +466,8 @@ func _try_merge() -> void:
 func _on_hit_started() -> void:
 	if size_tier != SizeTier.BIG:
 		current_hp = 0.0
+	if pack:
+		pack.on_member_damaged(self)
 
 func _apply_tier_visual() -> void:
 	var s := 20.0

@@ -1,4 +1,5 @@
 extends Resource
+class_name EnemyData
 
 enum EnemyType { SLIME, SPIDER, TOWER, GHOST, WORM, ELITE }
 
@@ -30,3 +31,24 @@ var shrink_recover_range: float = 9.0
 var small_hp_mult: float = 0.4
 var big_hp_mult: float = 1.2
 var big_grid: Vector2i = Vector2i(2, 2)
+
+# --- SlimePack: coordinación de manada (percepción compartida, presión, fusión) ---
+var pack_contact_radius: float = 7.0
+var pack_slot_distance: int = 3
+var pack_memory_time: float = 1.2
+var pack_pressure_wrap: float = 2.0
+var pack_pressure_press: float = 3.0
+var pack_pressure_fuse: float = 3.5
+var pack_fuse_min_members: int = 2
+var pack_fuse_hp_ratio: float = 0.6
+var pack_fuse_max_shrunk: int = 1
+var pack_channel_time: float = 1.0
+var pack_regroup_speedup: float = 2.0
+var pack_interrupt_on_hit: bool = true
+var personality: Dictionary = {
+	"impulsive": 0.0,
+	"cautious": 0.0,
+	"heavy": 0.0,
+	"light": 0.0,
+	"social": 0.0,
+}

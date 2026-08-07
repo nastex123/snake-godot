@@ -18,6 +18,7 @@ var move_interval := 0.15
 var enemies_alive := 0
 
 var SlimeScene = preload("res://scenes/enemy/Slime.tscn")
+var SlimePackScene = preload("res://scenes/enemy/SlimePack.tscn")
 var EnemyDataRes = preload("res://resources/EnemyData.gd")
 func _ready() -> void:
 	food_spawner.setup($GameArea/Food)
@@ -126,6 +127,18 @@ func _spawn_enemies(room: RoomData) -> void:
 	for child in enemy_container.get_children():
 		child.queue_free()
 	enemies_alive = 0
+	var pack = null
+	var has_slime := false
+	for spawn in room.enemy_spawns:
+		var pos = Vector2i(clampi(int(spawn.x), 0, 29), clampi(int(spawn.y), 0, 17))
+		var etype = spawn.get("type", "slime")
+		match etype:
+			"slime":
+				has_slime = true
+	if has_slime:
+		pack = SlimePackScene.instantiate()
+		pack.setup(snake_controller)
+		enemy_container.add_child(pack)
 	for spawn in room.enemy_spawns:
 		var pos = Vector2i(clampi(int(spawn.x), 0, 29), clampi(int(spawn.y), 0, 17))
 		var etype = spawn.get("type", "slime")
@@ -142,6 +155,8 @@ func _spawn_enemies(room: RoomData) -> void:
 				data.color = Color(0.2, 0.6, 0.2)
 				var slime = SlimeScene.instantiate()
 				slime.setup(data, pos)
+				slime.pack = pack
+				pack.register(slime)
 				slime.died.connect(_on_enemy_died)
 				slime.merged.connect(_on_enemy_merged)
 				enemy_container.add_child(slime)

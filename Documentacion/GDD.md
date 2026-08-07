@@ -553,6 +553,40 @@ Al iniciar cada salto, cada slime cuenta sus **aliados a ≤ 4 casillas**:
 - **[1 aliado]** → **Pinza**: cada slime cierra el eje con menor hueco (perpendicular al otro), aproximándose por ejes distintos para **triangular** y recoger al jugador.
 - **[Manada 3+]** → **Mural**: se reparten **Perseguidor** (el más cercano hostiga) y **Corte-de-salida** (el resto se reubica a los flancos del jugador para cortar el escape y empujarlo hacia un borde/esquina).
 
+### IA de manada — SlimePack (coordinación compartida)
+
+Pasa de un árbol reactivo por conteo de aliados a un **director de manada** (nodo
+`SlimePack`, uno por sala) cuya lógica vive parcialmente en el grupo y no en cada
+slime por separado. La pregunta deja de ser «¿cuántos aliados tengo?» y pasa a ser
+«¿qué posición me conviene ocupar para el objetivo común?».
+
+- **Estados de manada** (todos los miembros leen el mismo estado, no deciden por
+  separado): `SEARCH` (sin contacto) → `REGROUP` (dispersos) → `WRAP` (2+ cerca) →
+  `PRESS` (pocas rutas de escape) → `FUSE` (presión + elegibles).
+- **Slots radiales únicos**: cada tick el pack asigna a cada slime vivo un slot
+  alrededor del jugador, con un **pool compartido** → nunca dos slimes apuntan al
+  mismo destino en el mismo tick (cumple la regla de separación; si el pool se agota,
+  el miembro cae a persecución con dirección propia).
+- **Pressure System**: la presión se calcula por **lados direccionales cubiertos**
+  alrededor del jugador (1 lado = 1, 2 opuestos = 2.5, triángulo = 4.5, anillo = 6),
+  no por la cantidad de slimes. La fusión, la agresividad y el rol dependen de la
+  **calidad del cerco**, no del número bruto.
+- **Roles ampliados**: `persecutor` (frente), `shepherd` (empuja al jugador hacia una
+  dirección, le sostiene contra la pared), `anchor` (se coloca detrás del jugador y
+  **cierra la retirada**, no ataca), `see` (corte, ocupa la salida probable). Asignados
+  por posición del slot vs jugador + memoria.
+- **Predicción del jugador**: la persecución no solo intercepta el camino; los slimes
+  de corte ocupan la **salida más probable** (p. ej. si el jugador se mueve a la
+  derecha con una pared arriba, la salida probable es abajo-derecha).
+- **Memoria de sala**: dirección preferida y último lado por el que escapó el jugador;
+  si escapó por la izquierda varias veces, el grupo prioriza cerrar la izquierda.
+  Scoped a la sala (se resetea al entrar en una nueva). Evita las oscilaciones de
+  recalcular todo en cada salto.
+- **Personalidad como pesos de decisión** (no stats): impulsivo (wind-up corto),
+  cauteloso (prefiere corte), pesado (salto/pausa larga), ligero (hops rápidos),
+  social (prioriza reagruparse). Ajustan solo los pesos de la decisión; evitan la
+  sincronía visual de la manada.
+
 ### Cooldown por golpe y encogimiento (anti-tedio)
 
 - Al golpear a un slime entra en una ventana de **~0.5 s sin recibir daño** (no se puede stun-lockear en cadena).
@@ -561,11 +595,18 @@ Al iniciar cada salto, cada slime cuenta sus **aliados a ≤ 4 casillas**:
 
 ### Fusión — Slime Grande (amenaza principal)
 
-Disparada por **tiempo de acoso**: cuando **2-3 slimes elegibles** (no encogidos, talla Medium) permanecen **adyacentes/acorralando al jugador** más de un umbral, dejan los roles y se **fusionan en un Slime Grande:
+Decisión **táctica del pack** (no un timer oculto): cuando presión ≥ umbral y hay
+**≥2 slimes MEDIUM elegibles** (no encogidos, sin candado) con **HP promedio de la
+manada > 60%** y pocos encogidos, la manada entra en estado `FUSE` y los elegidos
+ejecutan una **canalización visible e interrumpible**:
 
-- Talla **2×2** (ocupa varias casillas), colores más oscuro.
-- **HP y daño de contacto multiplicados** (suma de los integrantes + bono).
-- Interacción clave: **encoger a los miembros antes impide la fusión**; no rematar a tiempo = crear un Slime Grande.
+- **Canalización (~1 s)**: los elegidos **vibran, generan un aura** y dejan de
+  perseguir mientras convergen.
+- **Interactiva**: el jugador puede **interrumpirla golpeando** a cualquiera del grupo
+  (cancela la fusión de todos), **separándolos** o **encogiéndolos** (un encogido
+  pierde la elegibilidad). No rematar a tiempo = crear un Slime Grande.
+- **Slime Grande**: talla **2×2**, color más oscuro, **HP y daño de contacto
+  multiplicados** (suma de integrantes + bono).
 
 ### Animaciones detalladas (squash & stretch procedural con tween)
 
@@ -573,7 +614,10 @@ Disparada por **tiempo de acoso**: cuando **2-3 slimes elegibles** (no encogidos
 - **Ritmo por rol**: Perseguidor con wind-up corto (agresivo), Corte-de-salida con «acecho» agachado; pausas con variola (`±20%`) para no sincronizar saldos.
 - **Daño/cooldown**: flash blanco en el golpe → **deflación** elástica a la talla menor con wobble de «recuperándose»; parpadeo ligero mientras no puede recibir daño.
 - **Re-inflar**: tween lento de crecimiento al alejarse el jugador con pequeños «sip» de aire.
-- **Fusión**: los integrantes elegibles semanalmente acortan sus hops y se deslizan hacia el objetivo → squash conjunto + shake → **inflado** del Slime Grande 2×2 con burst de partículas y anillo de impacto; idle lento y pesado.
+- **Fusión**: los elegidos entran en **canalización** (~1 s): vibran y generan un
+  aura dorada mientras dejan de perseguir y convergen; si no se interrumpe, squash
+  conjunto + shake → **inflado** del Slime Grande 2×2 con burst de partículas y
+  anillo de impacto; idle lento y pesado.
 - **Muerte**: deflate elástico + splash de goo en el suelo + mancha que se desvanece.
 
 Toda la animación usa curvas elásticas (`TRANS_CUBIC`/`EASE_OUT`) con overshoot, coherente con los visuales `ColorRect` actuales (no requiere assets).
