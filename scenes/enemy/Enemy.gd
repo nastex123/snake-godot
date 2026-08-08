@@ -49,9 +49,11 @@ func _add_visual() -> void:
 	visual.position = _visual_base()
 	visual.color = data.color
 	add_child(visual)
-	collision_shape = CollisionShape2D.new()
-	collision_shape.shape = RectangleShape2D.new()
-	add_child(collision_shape)
+	collision_shape = get_node_or_null("CollisionShape2D")
+	if collision_shape == null:
+		collision_shape = CollisionShape2D.new()
+		collision_shape.shape = RectangleShape2D.new()
+		add_child(collision_shape)
 
 # Hitbox física que sigue al nodo (y por tanto al sprite en movimiento continuo).
 # Tamaño = footprint real (grid_size * TILE), centrado en la celda.

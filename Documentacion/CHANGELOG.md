@@ -4,6 +4,33 @@ Registro de cambios del proyecto. Formato: fecha · qué · por qué · archivos
 
 ---
 
+## 2026-08-07 — Convención de escenas: SlimeGrande 2×2 y Torre con CollisionShape2D propio
+
+**Qué:** Aplica la convención de `AGENTS.md` (cada enemigo/item = `Area2D` con hijo
+`CollisionShape2D`; cada variante = escena/script propios, no flag de runtime):
+
+- `scenes/enemy/SlimeGrande.gd` + `.tscn` — variante 2×2 del Slime como escena/script
+  propias. Solo nace por fusión del pack.
+- `Slime.gd` — `_do_merge` ahora instancia el `SlimeGrande` (nodo nuevo) en el
+  centroide del grupo y absorbe a todos los miembros (incluido el líder). El flag
+  `size_tier = BIG` ya no se reasigna en runtime.
+- `Enemy._add_visual()` — reutiliza el `CollisionShape2D` declarado en la `.tscn`
+  si existe (antes siempre creaba uno en código, duplicando la hitbox).
+- `Tower.tscn` — añade hijo `CollisionShape2D` (gracias al reuso, una sola hitbox).
+- `Game.gd` — `_on_merge_spawned()` cuenta el grande como enemigo vivo de la sala
+  (absorbe `merged` × miembros, suma 1 por el grande; abre la puerta al morir).
+
+**Por qué:** Cumple AGENTS.md y elimina dos hitboxes físicas duplicadas por enemigo
+(nueva la declarada en escena + la que creaba `_add_visual`).
+
+**Validación:** test headless 17/17 — estructura de escenas (Area2D + CollisionShape2D
+del RectangleShape2D en Slime/Tower/SlimeGrande), grande 2×2 (grid 2×2, hitbox 48×48,
+sprite 44px, `can_merge` false), fusión (2 slimes → 1 SlimeGrande, absorbed ×2).
+Playtest en vivo: fusión inyectada crea la grande y el contador se mantiene. Regresión
+`Game.tscn --quit-after 240` sin errores.
+
+---
+
 ## 2026-08-05 — Slime: IA por grupo, fusión y anti-tedio (Fase 4)
 
 **Qué:** Comportamiento completo del Slime según el GDD actualizado: movimiento a

@@ -187,6 +187,15 @@ func _on_enemy_died(_enemy) -> void:
 func _on_enemy_merged(_enemy) -> void:
 	enemies_alive -= 1
 
+# El SlimeGrande (2×2) nace solo por fusión dentro del pack: entra como un
+# nuevo enemigo vivo (los absorbed salen por `merged`), conecta sus señales y
+# cuenta para la limpieza de sala como cualquier otro enemigo.
+
+func _on_merge_spawned(enemy) -> void:
+	enemies_alive += 1
+	enemy.merged.connect(_on_enemy_merged)
+	enemy.died.connect(_on_enemy_died)
+
 func _on_enemy_killed(_type: String, _pos: Vector2, xp: int, gold: int) -> void:
 	rm.add_score(gold)
 	rm.add_gold(gold)

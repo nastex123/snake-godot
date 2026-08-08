@@ -428,6 +428,8 @@ func do_pack_merge(group: Array) -> void:
 		_merge_lock = true
 
 func _do_merge(group: Array) -> void:
+	# Fusión: cada miembro (incluido el líder) se absorbe y se instancia el
+	# SlimeGrande (2×2) como nodo propio — variante con su propia escena/script.
 	var total_hp := 0.0
 	var total_max := 0.0
 	var cx := 0.0
@@ -438,22 +440,33 @@ func _do_merge(group: Array) -> void:
 		cx += m.grid_pos.x
 		cy += m.grid_pos.y
 	for m in group:
-		if m != self:
-			m._absorb()
-	size_tier = SizeTier.BIG
-	grid_size = data.big_grid
-	max_hp = total_max * data.big_hp_mult
-	current_hp = minf(total_hp, max_hp)
+		m._absorb()
 	var gx := clampi(roundi(cx / group.size()), 0, GRID_W - data.big_grid.x)
 	var gy := clampi(roundi(cy / group.size()), 0, GRID_H - data.big_grid.y)
-	grid_pos = Vector2i(gx, gy)
-	_target_grid_pos = grid_pos
-	position = Vector2(grid_pos) * TILE + Vector2(TILE * 0.5, TILE * 0.5)
-	_apply_tier_visual()
-	_update_collision_shape()
+	_spawn_grande(Vector2i(gx, gy), total_hp, total_max)
 	_merge_lock = true
-	_harass_time = 0.0
-	_merge_anim()
+
+func _spawn_grande(centroid: Vector2i, total_hp: float, total_max: float) -> void:
+	var big: Node = preload("res://scenes/enemy/SlimeGrande.tscn").instantiate()
+	big.setup(data, centroid)
+	big.max_hp = total_max * data.big_hp_mult
+	big.current_hp = minf(total_hp, big.max_hp)
+	big.pack = pack
+	if pack:
+		pack.register(big)
+	var parent := get_parent()
+	if parent:
+		parent.add_child(big)
+	big._merge_anim()
+	if is_inside_tree():
+		_wire_merge_game(big)
+	else:
+		_wire_merge_game.call_deferred(big)
+
+func _wire_merge_game(big) -> void:
+	var game: Node = get_tree().current_scene
+	if game and game.has_method("_on_merge_spawned"):
+		game._on_merge_spawned(big)
 
 func _absorb() -> void:
 	_absorbed = true

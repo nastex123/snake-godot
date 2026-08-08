@@ -1,5 +1,14 @@
 # Snake — Godot 4.7.1
 
+## Conventions
+
+- Every **enemy** and every **item** (pickup, chest, collectible) is an `Area2D`
+  with a child `CollisionShape2D` for its hitbox. No interactable entity may be a
+  plain `Node2D`/`Node` that relies on grid checks alone for contact.
+- Every **enemy** and every **item** gets its own `.tscn` — including variants of
+  an enemy: each variant is its own scene/script (not a runtime flag over a shared
+  scene).
+
 ## Project layout
 
 | Path | Role |
@@ -17,6 +26,7 @@
 | `scenes/food/FoodSpawner.gd` | Food spawn logic (free cells, random position) |
 | `scenes/enemy/Enemy.gd` | Enemy base (Area2D) — physics collision, take_damage, footprint |
 | `scenes/enemy/Slime.gd` | Hop locomotion, animation, combat, personality traits, pack interaction |
+| `scenes/enemy/SlimeGrande.gd` + `.tscn` | Variante 2×2 del Slime — escena/script propios (nace solo por fusión del pack) |
 | `scenes/enemy/SlimePack.gd` + `.tscn` | Per-room pack coordinator: states, unique slots, roles, memory, pressure, interactive fuse |
 | `scenes/enemy/Tower.gd` + `.tscn` | Static laser tower: AIM/FIRE/COOLDOWN cycle, 5 fixed cardinal patterns, state-dependant hit response |
 | `scenes/enemy/TowerLaser.gd` + `.tscn` | Drum-beam Area2D (torre→border segment), 1-hit damage to head |
