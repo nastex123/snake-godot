@@ -122,6 +122,8 @@ func _dirs_for(pattern: int) -> Array:
 	return [Vector2(1, 0)]
 
 func _lane_rect(dir: Vector2) -> Rect2:
+	# Carril que va de la torre (incluida) hasta el borde del tablero,
+	# cubriendo la celda borde completa también en direcciones negativas.
 	var start := grid_pos
 	var end: Vector2i = grid_pos + Vector2i(dir) * max(GRID_W, GRID_H)
 	if dir.x > 0:
@@ -132,11 +134,15 @@ func _lane_rect(dir: Vector2) -> Rect2:
 		end.y = GRID_H - 1
 	elif dir.y < 0:
 		end.y = 0
-	var a: Vector2 = Vector2(start) * TILE
-	var b: Vector2 = Vector2(end) * TILE + Vector2(TILE, TILE)
-	var pos: Vector2 = Vector2(minf(a.x, b.x), minf(a.y, b.y))
-	var size: Vector2 = (b - a).abs()
-	return Rect2(pos, size)
+	var min_px := Vector2(start) * TILE
+	var max_px := (Vector2(end) + Vector2.ONE) * TILE
+	if dir.x < 0:
+		min_px.x = float(end.x) * TILE
+		max_px.x = float(start.x + 1) * TILE
+	if dir.y < 0:
+		min_px.y = float(end.y) * TILE
+		max_px.y = float(start.y + 1) * TILE
+	return Rect2(min_px, max_px - min_px)
 
 func _aim_rects() -> Array:
 	var rects: Array = []

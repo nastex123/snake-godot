@@ -338,6 +338,16 @@ La partida termina cuando:
 
 ---
 
+## Mecha y explosión en cadena
+
+Algunas variantes (p. ej. el Slime-M18A2) juegan con **minas de mecha**: se
+activan cuando el jugador entra en su radio, cuentan unos segundos con telegraph
+visible y detonan en esa zona. Diseñadas para empujar el posicionamiento (obligan
+a decidir entre dispersar, rematar rápido o aguantar el blast) y para favorecer
+la **explosión en cascada** entre unidades iguales. Ver `Slime-M18A2`.
+
+---
+
 # Sistema de estadísticas
 
 Toda estadística será modificable.
@@ -621,6 +631,84 @@ ejecutan una **canalización visible e interrumpible**:
 - **Muerte**: deflate elástico + splash de goo en el suelo + mancha que se desvanece.
 
 Toda la animación usa curvas elásticas (`TRANS_CUBIC`/`EASE_OUT`) con overshoot, coherente con los visuales `ColorRect` actuales (no requiere assets).
+
+---
+
+## Slime-M18A2 («Baba-bomba»)
+
+Variante explosiva del Slime. Designación técnica **M18A2**; nombre común dentro
+del lore: **Baba-bomba** (categoría: **mina** / artillería gelatinosa). Es una
+gelatina pesada y lenta cuya dificultad no proviene del contacto sino de la
+**presión espacial de su detonación**: funciona como una mina con mecha que hay
+que esquivar o dispersar antes de que detone.
+
+Balance data-driven (mismo principio que el Slime): todos sus parámetros (tiempos
+de mecha, radio de explosión, pesos del hop, cadena) viven en `EnemyData` con
+prefijo `m18_*`, nunca como números mágicos en la lógica.
+
+### Movimiento — Hop pesado
+
+Usa el mismo ciclo de hop que el Slime base (cargar → saltar → aterrizar → pausa),
+pero con **mayor peso**:
+
+- Arco de salto más alto y pronunciado (`m18_weight_arc`).
+- Squash de aterrizaje más fuerte.
+- **Pausa entre saltos más larga** (`m18_hop_pause_scale`) → más lento que el Slime.
+- Conserva la personalidad como pesos de decisión (`impulsive`, `heavy`, …).
+
+### Pack propio — `SlimeM18Pack`
+
+Coordinador de manada **independiente** (un nodo por sala) que reutiliza **toda la
+lógica del `SlimePack` vanilla** (estados `SEARCH → REGROUP → WRAP → PRESS`,
+percepción compartida, slots radiales únicos, roles, presión) pero que **solo
+registra M18s** de la sala.
+
+- **Sin fusión**: `can_merge=false` siempre; ningún M18 canaliza ni se convierte en
+  Slime Grande.
+- La presión del pack se usa para **acercar las minas al jugador en formación**,
+  no para fundirlas.
+
+### Mecha — secuencia de 3 s
+
+Cuando el jugador entra en el **3×3 centrado en el M18** (distancia de Chebyshev
+≤ 1 celda), el M18 comienza una **cuenta atrás de 3 s** (`m18_fuse_time`):
+
+- Se **congela** (deja de hopear).
+- **Señaliza**: parpadeo visual ámbar/rojo + **telegraph del 3×3** (rejilla
+  pulsante, mismo lenguaje del telegraph de la Torre).
+- Al terminar la cuenta: **explosión en el mismo 3×3**.
+
+### Explosión
+
+- Daña al jugador si está dentro del 3×3 (`EventBus.damage_taken`).
+- Feedback: flash + burst de partículas rojas (patrón `ExplosionEffect`/goo).
+
+### Hito físico
+
+La cabeza que golpea al M18 lo **mata Y detona de inmediato** en esa casilla
+(dañando el 3×3). No se puede rematar de cerca sin recibir el blast: o se dispersa
+a distancia o se aguanta el daño.
+
+### Explosión en cadena — M18 a M18
+
+Solo M18s **dentro del 3×3** de la explosión entran en cadena:
+
+- Cada M18 encadenado es **dispersado** radialmente **lejos del centro del blast**
+  (1-2 celdas según su dirección respecto al centro) y entra en **mecha corta de
+  1.3 s** (`m18_chain_fuse_time`).
+- Al terminar la mecha corta, explota su **propio 3×3** en la nueva posición y puede
+  volver a encadenar en cascada.
+- Anti-parásito: un M18 en mecha **no se reencadena** (flag por explosión); la
+  dispersión evita detonaciones simultáneas sobre la misma zona.
+
+### Animación y feedback
+
+- Squash & stretch con **peso** (más hundido al cargar, arco más alto, aterrizaje
+  más brutal).
+- Vibración + parpadeo ámbar/rojo mientras corre la mecha.
+- Telegraph pulsante del 3×3 antes de detonar.
+- Flash + burst de partículas rojas en la detonación.
+- Coherente con los visuales `ColorRect` actuales (sin assets).
 
 ---
 

@@ -31,3 +31,10 @@ tick). Si el pool se agota, el miembro cae a persecución con dirección propia.
 superposición permitida sigue siendo la **fusión** (canalización → `_do_merge`), que
 ahora es una decisión táctica del pack y no un timer oculto. Ver
 `Documentacion/FASE_04_Enemigos.md` → SlimePack para el detalle.
+
+---
+
+### Enemigo Elite
+añadiriamos una Tower elite que su ataque seria atacar en cruz, y sea posible una rotacion de 90º
+
+---
