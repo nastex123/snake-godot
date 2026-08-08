@@ -31,10 +31,22 @@ func setup(enemy_data, position: Vector2i) -> void:
 	_add_visual()
 	_update_collision_shape()
 
+# ---------- anclaje de huella ----------
+# El nodo vive en el CENTRO de su celda base (grid_pos). Todos los elementos
+# visuales deben centrarse en el centro de la huella completa (footprint), que
+# para bloques >1x1 no coincide con la celda base: quedarían descentrados y
+# sobresaldrían fuera del área jugable sin poder golpearse en su casilla.
+
+func _footprint_center() -> Vector2:
+	return Vector2(grid_size - Vector2i.ONE) * TILE_SIZE * 0.5
+
+func _visual_base() -> Vector2:
+	return _footprint_center() - visual.size * 0.5
+
 func _add_visual() -> void:
 	visual = ColorRect.new()
 	visual.size = Vector2(20, 20)
-	visual.position = Vector2(-10, -10)
+	visual.position = _visual_base()
 	visual.color = data.color
 	add_child(visual)
 	collision_shape = CollisionShape2D.new()

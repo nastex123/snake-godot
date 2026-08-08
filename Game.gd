@@ -19,6 +19,7 @@ var enemies_alive := 0
 
 var SlimeScene = preload("res://scenes/enemy/Slime.tscn")
 var SlimePackScene = preload("res://scenes/enemy/SlimePack.tscn")
+var TowerScene = preload("res://scenes/enemy/Tower.tscn")
 var EnemyDataRes = preload("res://resources/EnemyData.gd")
 func _ready() -> void:
 	food_spawner.setup($GameArea/Food)
@@ -130,11 +131,8 @@ func _spawn_enemies(room: RoomData) -> void:
 	var pack = null
 	var has_slime := false
 	for spawn in room.enemy_spawns:
-		var pos = Vector2i(clampi(int(spawn.x), 0, 29), clampi(int(spawn.y), 0, 17))
-		var etype = spawn.get("type", "slime")
-		match etype:
-			"slime":
-				has_slime = true
+		if spawn.get("type", "slime") == "slime":
+			has_slime = true
 	if has_slime:
 		pack = SlimePackScene.instantiate()
 		pack.setup(snake_controller)
@@ -160,6 +158,23 @@ func _spawn_enemies(room: RoomData) -> void:
 				slime.died.connect(_on_enemy_died)
 				slime.merged.connect(_on_enemy_merged)
 				enemy_container.add_child(slime)
+				enemies_alive += 1
+			"tower":
+				var tdata = EnemyDataRes.new()
+				tdata.enemy_id = "tower"
+				tdata.display_name = "Tower"
+				tdata.enemy_type = tdata.EnemyType.TOWER
+				tdata.max_hp = 30.0
+				tdata.damage = 10.0
+				tdata.speed = 0.0
+				tdata.xp_drop = 15
+				tdata.gold_drop = 8
+				tdata.color = Color(0.55, 0.25, 0.15)
+				tdata.tower_pattern = int(spawn.get("pattern", tdata.TowerPattern.SINGLE_RIGHT))
+				var tower = TowerScene.instantiate()
+				tower.setup(tdata, pos)
+				tower.died.connect(_on_enemy_died)
+				enemy_container.add_child(tower)
 				enemies_alive += 1
 
 func _on_enemy_died(_enemy) -> void:

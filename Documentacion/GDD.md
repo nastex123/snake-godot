@@ -632,7 +632,24 @@ Persigue.
 
 ## Torre
 
-Dispara.
+Estática (no se mueve). Dispara láseres en direcciones cardinales **fijas** (el patrón se define al spawn, no apunta al jugador). Ciclo: **AIM** (telegraph) → **FIRE** (láser) → **COOLDOWN**.
+
+| Estado | Duración | Al ser golpeada |
+|--------|----------|-----------------|
+| AIM | `tower_aim_time` | El **jugador** recibe el daño (reflejo); la torre no pierde vida ni se cancela |
+| FIRE | `tower_beam_duration` | Muere de **1 golpe** |
+| COOLDOWN | `tower_reload_time` | Sobrevive al 1er golpe; muere al **2º** |
+
+**Patrones** (fijos por spawn, enum `TowerPattern`):
+- `SINGLE_LEFT` / `SINGLE_RIGHT` (A): 1 láser horizontal fijo
+- `SINGLE_UP` / `SINGLE_DOWN` (B): 1 láser vertical fijo
+- `DOUBLE_LR` (C): ← + → a la vez
+- `DOUBLE_UD` (D): ↑ + ↓ a la vez
+- `CORNER` (E): 2 perpendiculares; la esquina apunta hacia el **centro del tablero** según su posición
+
+**Láser**: `TowerLaser.gd` (Area2D) — segmento torre→borde del grid; daña a la cabeza 1 sola vez por disparo (`EventBus.damage_taken`). El telegraph de AIM muestra la fila/columna/región afectada con alpha pulsante antes de disparar.
+
+**Data-driven**: `EnemyData` — `tower_pattern`, `tower_aim_time`, `tower_beam_duration`, `tower_reload_time`, `tower_core_color`.
 
 ---
 

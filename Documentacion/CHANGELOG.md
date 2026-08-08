@@ -174,6 +174,93 @@ Regresión Game.tscn 150 frames sin errores.
 
 ---
 
+## 2026-08-07 — Torre: láser fijo con 5 patrones (Fase 4)
+
+**Qué:** Nuevo enemigo estático que dispara láseres en direcciones cardinales
+**fijas** (definidas al spawn, no apuntan al jugador). Ciclo de 3 estados +
+comportamiento de golpe distinto en cada uno + 5 patrones.
+
+**Por qué:** Dar variedad de amenazas contra el jugador en movimiento (el láser
+con telegraph obliga a leer qué fila/columna se bloquea) y enemigos de control de
+zona sin IA de persecución.
+
+**Diseño:**
+
+- **Máquina de estados**: `AIM` (telegraph de dirección, `tower_aim_time`) →
+  `FIRE` (instancia láseres `tower_beam_duration`) → `COOLDOWN`
+  (`tower_reload_time`) → `AIM`.
+- **Golpe según estado** (override de `take_damage` en `Tower.gd`):
+  - `AIM`: el jugador recibe `data.damage` reflejado (no pierde vida ni se cancela).
+  - `FIRE`: muerte de 1 golpe.
+  - `COOLDOWN`: contador `_cooldown_hits` — 1er golpe sobrevive, 2º muere.
+- **Patrones** (`TowerPattern`): `SINGLE_LEFT/RIGHT`, `SINGLE_UP/DOWN`,
+  `DOUBLE_LR`, `DOUBLE_UD`, `CORNER` (2 perpendiculares apuntando al centro del
+  tablero según la posición de la torre).
+- **Láser**: `TowerLaser.gd` (Area2D) — segmento torre→borde del grid, `mask=1`
+  (cabeza), daño 1x por rayo; el telegraph de AIM lo muestra con α pulsante.
+
+**Archivos tocados:**
+- `scenes/enemy/Tower.gd` + `Tower.tscn` — nuevo: `_process` con estados, geometría
+  por patrón (`_dirs_for`/`_lane_rect`, rect normalizado min), preview y láseres en
+  `_fx_root`/`_lasers_root` (hijos del parent del grid, creación perezosa), `die()`
+  limpiando ambos roots antes del `super.die()`.
+- `scenes/enemy/TowerLaser.gd` + `TowerLaser.tscn` — nuevo: Area2D con `setup(rect,
+  dmg, col)`, detecta `snake_head`, daño 1x.
+- `resources/EnemyData.gd` — enum `TowerPattern` + `tower_pattern`,
+  `tower_aim_time`, `tower_beam_duration`, `tower_reload_time`, `tower_core_color`.
+- `Game.gd` — `_spawn_enemies()` case `"tower"` (lee `pattern` del spawn, registra
+  `died` → cuenta).
+- `autoload/MapManager.gd` — torres en salas NORMAL/EVENT/SHOP/BOSS con patrones
+  variados.
+
+**Correcciones durante prueba (tests headless):**
+- Inferencia de tipos (Variant) en `Tower.gd` (`end`/`t` con tipo explícito;
+  `start + dir*N` era `Vector2i + Vector2` → cast a `Vector2i(dir)`).
+- `_lane_rect` normaliza con `minf`/`.abs()` para direcciones −X/−Y (tamaño
+  negativo salía negativo).
+- `get_fx_root`/`get_lasers_root` usan `add_child.call_deferred` (el parent puede
+  estar "busy" durante `_ready`) + `is_instance_valid` para no ceder en el 1er frame.
+- `Tower.gd.die()` libera ambos roots antes de `super.die()` (no quedar huérfanos
+  en `EnemyContainer`).
+
+**Validación (tests headless):** los 5 patrones pasan de AIM→FIRE al tiempo
+correcto con `n` telegraphs/láseres; `FIRE` mata de 1 golpe; `COOLDOWN` sobrevive
+al 1er golpe y muere al 2º; `AIM` bloquea el daño a la torre y refleja `data.damage`
+al jugador. Regresión `Game.tscn --quit-after` sin errores.
+
+---
+
+## 2026-08-07 — Hitbox vs sprite: desfases de anclaje y del salto (Fase 4)
+
+**Qué:** Corrección de los desfases entre la representación visual del enemigo y su
+área de colisión que impedían al jugador dañarlo en su casilla (slimes 1×1 que
+maniobran en el tope del grid y Slime Grande 2×2).
+
+**Por qué:** (a) el sprite 44px y el aura del 2×2 se pintaban centrados en la celda
+esquina del bloque (el nodo vive en el centro de `grid_pos`), no en el centro de la
+huella completa → sobresalían ~10px fuera y quedaban cortos; (b) en el salto,
+`_hop_from`/`global_position` usa coordenadas de mundo (con el offset +76 del
+GameArea) mientras `_hop_to` usa locales — la hitbox se hundía ~76px hacia arriba en
+cada salto mientras el sprite quedaba clampeado dentro del grid: inalcanzable para
+la cabeza del jugador.
+
+**Archivos tocados:**
+- `scenes/enemy/Enemy.gd` — helpers `_footprint_center()` (`(grid_size−1)×TILE/2`) y
+  `_visual_base()`; `_add_visual()` ancla el sprite por la huella.
+- `scenes/enemy/Slime.gd` — `visual.position` pasa por `_visual_base()` en JUMP/
+  LAND/`_process_channel`/`_apply_tier_visual`; `_recenter_aura()` re-posiciona el
+  aura sobre el centro del sprite; `_land_fx()` centra el goo en la huella;
+  `_clamp_visual_y` solo recorta el arco (sin desacoplar sprite↔hitbox); el salto se
+  mantiene en coordenadas **locales** (`position`) en `_start_hop_to`, `Phase.JUMP` y
+  `_do_merge` (ya no mezcla con `global_position`).
+
+**Validación:** test headless 15/15 — 1×1 (fila 0 y 17) y 2×2 (0,0)/(0,16) con hitbox
+centrada en la celda y sprite dentro de la huella; la cabeza (colisión física)
+alcanza al enemigo en reposo, en pleno salto (celda destino) y en las 4 celdas del
+bloque. Regresión `Game.tscn --quit-after 180` sin errores.
+
+---
+
 ## Fases previas
 
 - Fase 3: sistema de salas con transiciones y puerta (commit `b4b1b71`).

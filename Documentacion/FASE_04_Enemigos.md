@@ -392,6 +392,57 @@ a la sala (se resetea al entrar en una nueva).
 
 Ver `Documentacion/CHANGELOG.md` (2026-08-06) para la validación headless.
 
+### Torre — láser fijo (completado ✅ 2026-08-07)
+
+Enemigo **estático** que dispara láseres en direcciones cardinales fijas (el patrón
+se define al spawn, no apunta al jugador):
+
+- **Ciclo**: `AIM` (telegraph) → `FIRE` (láser) → `COOLDOWN` → `AIM`.
+- **Golpe según estado** (override de `take_damage`):
+  - `AIM`: el **jugador** recibe `data.damage` (reflejo); la torre no pierde vida ni
+    se cancela (`return false` + emitir `damage_taken` nosotros, sin doble-emit).
+  - `FIRE`: muere de **1 golpe**.
+  - `COOLDOWN`: contador `_cooldown_hits` — sobrevive al 1er golpe, muere al 2º.
+- **Patrones** (`TowerPattern`): `SINGLE_LEFT/RIGHT` (A), `SINGLE_UP/DOWN` (B),
+  `DOUBLE_LR` (C), `DOUBLE_UD` (D), `CORNER` (E — 2 perpendiculares apuntando al
+  centro del tablero según posición).
+- **Telegraph**: 1 ColorRect por dirección, alpha pulsante sobre el segmento
+  torre→borde durante `AIM`; `FIRE` instancia `TowerLaser.gd` (Area2D, `mask=1`
+  cabeza, daño 1x por rayo) y los libera en `COOLDOWN`.
+- **Data-driven** en `EnemyData.gd` (`tower_pattern`, `tower_aim_time`,
+  `tower_beam_duration`, `tower_reload_time`, `tower_core_color`).
+- Spawn desde `Game.gd._spawn_enemies()` (case `"tower"` + `pattern`); torres en
+  todas las salas vía `MapManager._generate_spawns()`.
+
+Ver `Documentacion/GDD.md` → `# Enemigos → ## Torre` para el diseño completo.
+
+### Hitbox vs sprite — desfases corregidos (✅ 2026-08-07)
+
+Desfases entre la representación visual del enemigo y su área de colisión que
+impedían al jugador dañarlo en su casilla:
+
+- **Slime Grande 2×2**: el sprite 44px y el aura se pintaban centrados en la **celda
+  esquina** del bloque (el nodo vive en el centro de `grid_pos`, no del footprint) →
+  sobresalían ~10px arriba/izquierda y quedaban cortos abajo/derecha. Ahora todos los
+  elementos visuales (`visual`, `aura`, goo del `_land_fx`) se centran en el **centro
+  de la huella** (`_footprint_center()` = `(grid_size−1)×TILE/2`).
+- **Salto en el tope del grid**: `_hop_to` usaba coordenadas locales (`celda×24+12`)
+  mientras `_hop_from`/`global_position` incluyen el offset del mundo (+76 del
+  GameArea). Mezclar esas bases hundía la hitbox ~76px hacia arriba en cada salto: el
+  sprite (clampeado) se veía dentro del grid pero la colisión quedaba inalcanzable.
+  El salto ahora vive en coordenadas **locales** (`position`), igual que el grid de la
+  serpiente, y `_clamp_visual_y` solo recorta el arco sin desacoplar sprite y hitbox.
+
+Cambios: `Enemy.gd` — helpers `_footprint_center()`/`_visual_base()`, `_add_visual`
+ancla por huella; `Slime.gd` — `visual.position` rebaselineado en
+JUMP/LAND/channel/`_apply_tier_visual`, `_recenter_aura()`, `_land_fx()` centrado,
+`_start_hop_to`/`Phase.JUMP`/`_do_merge` en coordenadas locales.
+
+**Validación:** test headless 15/15 — 1×1 (fila 0 y 17) y 2×2 (0,0)/(0,16) con hitbox
+centrada en la celda y sprite dentro de la huella; la cabeza golpea al slime en
+reposo, en pleno salto (celda destino) y en las 4 celdas del bloque. Regresión
+`Game.tscn --quit-after 180` sin errores.
+
 ---
 
 ## Notas técnicas Godot

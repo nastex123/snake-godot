@@ -60,6 +60,15 @@ func _add_aura() -> void:
 	_aura.color = Color(1, 0.9, 0.5, 0.0)
 	_aura.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visual.add_child(_aura)
+	_recenter_aura()
+
+# El aura es hija del sprite: se centra sobre el centro del sprite (= centro de
+# la huella) recalculando su esquina cada vez que cambie el tamaño del cuerpo.
+
+func _recenter_aura() -> void:
+	if _aura == null:
+		return
+	_aura.position = visual.size * 0.5 - _aura.size * 0.5
 
 func _add_eyes() -> void:
 	_eye_l = ColorRect.new()
@@ -143,13 +152,13 @@ func _advance_phase(delta: float) -> void:
 		Phase.JUMP:
 			var t := clampf(phase_time / data.hop_jump_time, 0.0, 1.0)
 			var e := _smoothstep(t)
-			global_position = _hop_from.lerp(_hop_to, e)
-			visual.position.y = -visual.size.y * 0.5 - sin(t * PI) * 8.0
+			position = _hop_from.lerp(_hop_to, e)
+			visual.position = _visual_base() + Vector2(0, -_arc_offset(t))
 			_clamp_visual_y()
 			_set_squash(1.0 - 0.3 * sin(t * PI), 1.0 + 0.4 * sin(t * PI))
 			if phase_time >= data.hop_jump_time:
 				grid_pos = _target_grid_pos
-				visual.position.y = -visual.size.y * 0.5
+				visual.position = _visual_base()
 				_clamp_visual_y()
 				phase = Phase.LAND
 				phase_time = 0.0
@@ -202,9 +211,13 @@ func _pack_jump() -> void:
 		target = grid_pos
 	_start_hop_to(target)
 
+# El salto traza en coordenadas LOCALES (mismas unidades que el grid de la
+# serpiente). `global_position` incluye el offset del GameArea (+76 en Y);
+# mezclar unidades hundía la hitbox fuera del área jugable en cada salto.
+
 func _start_hop_to(target: Vector2i) -> void:
 	_move_towards(target)
-	_hop_from = global_position
+	_hop_from = position
 	_hop_to = Vector2(_target_grid_pos) * TILE + Vector2(TILE * 0.5, TILE * 0.5)
 	phase = Phase.JUMP
 	phase_time = 0.0
@@ -212,25 +225,40 @@ func _start_hop_to(target: Vector2i) -> void:
 		phase_time = data.hop_jump_time * 0.5
 
 func _land_fx() -> void:
+	var center: Vector2 = get_parent().to_local(global_position + _footprint_center())
 	for i in 4:
 		var drop := ColorRect.new()
 		drop.size = Vector2(3, 3)
 		drop.color = data.color
-		var local: Vector2 = get_parent().to_local(global_position + Vector2(randf_range(-6, 6), randf_range(-6, 6)))
+		var local: Vector2 = center + Vector2(randf_range(-6, 6), randf_range(-6, 6))
 		drop.position = local
 		get_parent().add_child(drop)
 		var tw := create_tween()
 		tw.tween_property(drop, "modulate:a", 0.0, 0.35)
 		tw.tween_callback(drop.queue_free)
 
-# Mantiene el sprite dentro del grid (la fila 0 queda pegada al HUD, y el arco
-# del salto levanta el cuerpo por encima de la línea superior del grid).
+# ---------- anclaje y arco de salto ----------
+# La base del sprite siempre centrada en el centro de la huella (footprint);
+# el arco del salto solo eleva el sprite por encima de esa base, SIN desplazar
+# el centro de la huella: sprite y hitbox quedan en la misma casilla.
+
+func _visual_base() -> Vector2:
+	return _footprint_center() - visual.size * 0.5
+
+func _arc_offset(t: float) -> float:
+	return sin(t * PI) * 8.0
+
+# Mantiene el sprite dentro del grid en Y (la fila 0 está pegada al HUD). El
+# clamp solo recorta el arco, nunca mueve el centro del sprite fuera de su
+# huella, así el jugador siempre ve a la criatura en la casilla donde se libra.
 
 func _clamp_visual_y() -> void:
 	if visual == null:
 		return
 	var ny := global_position.y
-	visual.position.y = clampf(visual.position.y, GRID_TOP_Y - ny, GRID_TOP_Y + GRID_H * TILE - ny - visual.size.y)
+	var min_y := GRID_TOP_Y - ny
+	var max_y := GRID_TOP_Y + GRID_H * TILE - ny - visual.size.y
+	visual.position.y = clampf(visual.position.y, min_y, max_y)
 
 # ---------- árbol de decisión ----------
 
@@ -367,9 +395,9 @@ func end_channel() -> void:
 func _process_channel(delta: float) -> void:
 	phase_time += delta
 	# Vibración + aura mientras canaliza; se queda quieto (no persigue).
-	var sh = sin(phase_time * 42.0) * 1.2
-	visual.position.x = -visual.size.x * 0.5 + sh
-	visual.position.y = -visual.size.y * 0.5 + cos(phase_time * 37.0) * 1.2
+	var sh := sin(phase_time * 42.0) * 1.2
+	var base := _visual_base()
+	visual.position = base + Vector2(sh, cos(phase_time * 37.0) * 1.2)
 	_clamp_visual_y()
 
 func _tween_aura(on_: bool) -> void:
@@ -420,7 +448,7 @@ func _do_merge(group: Array) -> void:
 	var gy := clampi(roundi(cy / group.size()), 0, GRID_H - data.big_grid.y)
 	grid_pos = Vector2i(gx, gy)
 	_target_grid_pos = grid_pos
-	global_position = Vector2(grid_pos) * TILE + Vector2(TILE * 0.5, TILE * 0.5)
+	position = Vector2(grid_pos) * TILE + Vector2(TILE * 0.5, TILE * 0.5)
 	_apply_tier_visual()
 	_update_collision_shape()
 	_merge_lock = true
@@ -477,7 +505,7 @@ func _apply_tier_visual() -> void:
 		SizeTier.BIG:
 			s = 44.0
 	visual.size = Vector2(s, s)
-	visual.position = Vector2(-s * 0.5, -s * 0.5)
+	visual.position = _visual_base()
 	visual.pivot_offset = visual.size * 0.5
 	visual.scale = Vector2.ONE
 	visual.color = data.color
@@ -485,6 +513,7 @@ func _apply_tier_visual() -> void:
 		visual.color = data.color.darkened(0.25)
 	elif size_tier == SizeTier.SMALL:
 		visual.color = data.color.lightened(0.3)
+	_recenter_aura()
 	_clamp_visual_y()
 
 func _update_look() -> void:

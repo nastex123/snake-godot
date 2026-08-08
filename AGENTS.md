@@ -18,6 +18,8 @@
 | `scenes/enemy/Enemy.gd` | Enemy base (Area2D) — physics collision, take_damage, footprint |
 | `scenes/enemy/Slime.gd` | Hop locomotion, animation, combat, personality traits, pack interaction |
 | `scenes/enemy/SlimePack.gd` + `.tscn` | Per-room pack coordinator: states, unique slots, roles, memory, pressure, interactive fuse |
+| `scenes/enemy/Tower.gd` + `.tscn` | Static laser tower: AIM/FIRE/COOLDOWN cycle, 5 fixed cardinal patterns, state-dependant hit response |
+| `scenes/enemy/TowerLaser.gd` + `.tscn` | Drum-beam Area2D (torre→border segment), 1-hit damage to head |
 | `ComboTimer.gd` | Rectangular two-layer timer bar (gray buffer, streak-colored fill) |
 | `GridTexture.gd` | Seamless 24×24 tile → tiled across 720×432 |
 | `GridBorder.gd` | 2px black outline around the grid |
@@ -186,6 +188,11 @@
   conecta `merged` → decrementa `enemies_alive`
 - [x] Balance data-driven en `EnemyData.gd` (sin magic numbers)
 - [x] GDD: sección Slime completa; CHANGELOG y FASE_04 actualizados
+- [x] `Tower.gd` + `.tscn` — torre estática con láser fijo: ciclo AIM→FIRE→COOLDOWN;
+  golpe según estado (AIM reflexiona al jugador, FIRE muere de 1, COOLDOWN 2 golpes)
+- [x] `TowerLaser.gd` + `.tscn` — rayo Area2D (segmento torre→borde, daño 1x al head)
+- [x] `EnemyData.gd` — enum `TowerPattern` + datos `tower_*`
+- [x] `Game.gd` — case `"tower"` (spawnea con `pattern`); `MapManager.gd` torres por sala
 
 ### Bugs resueltos (Slime)
 - [x] Daño asimétrico: el jugador recibía daño repetido durante el cooldown de golpe
@@ -210,10 +217,16 @@
   `SnakeHead` layer 1/mask 6 + shape 24×24; `Enemy/CollisionShape2D` dinámico por
   `grid_size` (layer 2); `Game._physics_process` usa `get_overlapping_areas()`.
   Capas en `layer_names/2d_physics`. Resuelve el hueco de temporización del tick.
+- [x] Hitbox vs sprite desalineados: el **Slime Grande 2×2** pintaba sprite/aura
+  centrados en la celda esquina (no en el centro del bloque) y el **salto** mezclaba
+  coordenadas locales (`_hop_to`) con de mundo (`global_position`, +76 del GameArea)
+  → la hitbox se hundía ~76px fuera del área jugable. Fix: `_footprint_center()`/
+  `_visual_base()` en `Enemy.gd`; `Slime.gd` rebasea `visual.position`, recentra aura
+  y goo, y traba el salto en coordenadas **locales** (`position`).
 
 ### Pendiente (resto de la Fase 4)
-- [ ] Spider, Tower, Ghost, Worm, Elite
+- [ ] Spider, Ghost, Worm, Elite
 - [ ] Projectile.gd + disparo de torre
-- [ ] Spawn multi-tipo desde RoomData/MapManager
+- [ ] Spawn multi-tipo desde RoomData/MapManager (ahora slime + torre)
 - [ ] `room_cleared` conexión EventBus
 - [ ] Probar los nuevos tipos en editor (vía godot-mcp)

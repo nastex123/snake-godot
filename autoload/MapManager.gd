@@ -33,9 +33,25 @@ func _generate_spawns(type: RoomData.Type, _index: int) -> Array[Dictionary]:
 			var count = 2 if _index < 3 else 3
 			for j in count:
 				spawns.append({"x": 8 + j * 3, "y": 9, "type": "slime"})
+			var towers: Array[Dictionary] = [
+				{"x": 3, "y": 3, "pattern": 1},
+				{"x": 26, "y": 14, "pattern": 5},
+				{"x": 20, "y": 14, "pattern": 4},
+			]
+			var t = towers[_index % towers.size()]
+			if _index >= 2:
+				spawns.append(t)
+			else:
+				spawns.append({"x": 26, "y": 3, "pattern": t["pattern"]})
+		RoomData.Type.EVENT:
+			spawns.append({"x": 6, "y": 8, "type": "tower", "pattern": 4})
+		RoomData.Type.SHOP:
+			spawns.append({"x": 12, "y": 15, "type": "tower", "pattern": 3})
+			spawns.append({"x": 20, "y": 6, "type": "tower", "pattern": 5})
 		RoomData.Type.BOSS:
 			for j in 4:
 				spawns.append({"x": 7 + j * 5, "y": 9, "type": "slime"})
+			spawns.append({"x": 2, "y": 4, "type": "tower", "pattern": 6})
 	return spawns
 
 func get_current_room() -> RoomData:

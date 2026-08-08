@@ -2,6 +2,7 @@ extends Resource
 class_name EnemyData
 
 enum EnemyType { SLIME, SPIDER, TOWER, GHOST, WORM, ELITE }
+enum TowerPattern { SINGLE_LEFT, SINGLE_RIGHT, SINGLE_UP, SINGLE_DOWN, DOUBLE_LR, DOUBLE_UD, CORNER }
 
 var enemy_id: String = ""
 var enemy_type: int = EnemyType.SLIME
@@ -45,6 +46,13 @@ var pack_fuse_max_shrunk: int = 1
 var pack_channel_time: float = 1.0
 var pack_regroup_speedup: float = 2.0
 var pack_interrupt_on_hit: bool = true
+
+# --- Tower: patrón de disparo fijo + tiempos de ciclo + dureza ---
+var tower_pattern: int = TowerPattern.SINGLE_RIGHT
+var tower_aim_time: float = 0.7
+var tower_beam_duration: float = 0.3
+var tower_reload_time: float = 1.2
+var tower_core_color: Color = Color(1.0, 0.95, 0.5)
 var personality: Dictionary = {
 	"impulsive": 0.0,
 	"cautious": 0.0,
